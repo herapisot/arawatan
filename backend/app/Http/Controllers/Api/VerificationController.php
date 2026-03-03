@@ -95,9 +95,12 @@ class VerificationController extends Controller
             $reasons[] = 'ID image resolution is too low.';
         }
 
-        // ── 5. Tesseract OCR — the core validation ─────────────────
-        $detectedId = $this->ocrService->detectStudentNumber($absolutePath);
+        // ── 5. Tesseract OCR — full analysis ──────────────────────
+        $analysis   = $this->ocrService->analyzeId($absolutePath);
+        $detectedId = $analysis['detected_id'];
+        $ocrText    = $analysis['raw_text'];
 
+        // 5a. Student/Employee ID number match
         if ($detectedId) {
             // OCR found a student-number-shaped string on the ID
             $confidenceScore += 15;
@@ -116,6 +119,33 @@ class VerificationController extends Controller
         } else {
             // OCR could not detect any student number
             $reasons[] = 'Could not read a student number from the ID image. Please upload a clear, well-lit photo.';
+        }
+
+        // 5b. Name matching — first name & last name must appear on the ID
+        $nameResult = $this->ocrService->matchName($ocrText, $user->first_name, $user->last_name);
+
+        if ($nameResult['full_match']) {
+            // Both first and last name found on the ID
+            $confidenceScore += 15;
+        } else {
+            if (!$nameResult['first_name_match']) {
+                $reasons[] = "Your first name (\"{$user->first_name}\") was not found on the ID.";
+            }
+            if (!$nameResult['last_name_match']) {
+                $reasons[] = "Your last name (\"{$user->last_name}\") was not found on the ID.";
+            }
+        }
+
+        // 5c. Institution check — the ID must belong to MinSU
+        if ($analysis['institution_found']) {
+            $confidenceScore += 10;
+        } else {
+            $reasons[] = 'The ID does not appear to be from Mindanao State University (MinSU).';
+        }
+
+        // 5d. Logo comparison with reference image (bonus)
+        if ($analysis['logo_match']) {
+            $confidenceScore += 5;
         }
 
         // Cap at 99.9
@@ -152,6 +182,13 @@ class VerificationController extends Controller
             'status'        => $verification->status,
             'ai_confidence' => $confidenceScore,
             'ocr_detected'  => $detectedId,
+            'checks'        => [
+                'id_number_match'    => $detectedId === $user->student_id,
+                'first_name_match'   => $nameResult['first_name_match'] ?? false,
+                'last_name_match'    => $nameResult['last_name_match'] ?? false,
+                'institution_found'  => $analysis['institution_found'] ?? false,
+                'logo_match'         => $analysis['logo_match'] ?? false,
+            ],
             'verification'  => $verification,
         ]);
     }
