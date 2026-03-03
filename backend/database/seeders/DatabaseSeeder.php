@@ -6,7 +6,7 @@ use App\Models\User;
 use App\Models\Item;
 use App\Models\ItemImage;
 use App\Models\Badge;
-use App\Models\GalleryPost;
+use App\Models\ForumPost;
 use App\Models\Transaction;
 use App\Models\Conversation;
 use App\Models\Message;
@@ -202,28 +202,28 @@ class DatabaseSeeder extends Seeder
             'text' => 'Yes it is! It\'s adjustable and works great. I can bring it to the Arawatan Corner.',
         ]);
 
-        // Create gallery posts
-        GalleryPost::create([
+        // Create forum posts
+        ForumPost::create([
             'user_id' => $users[0]->id,
             'transaction_id' => $t1->id,
-            'image_path' => 'gallery/placeholder1.jpg',
+            'image_path' => 'forum/placeholder1.jpg',
             'caption' => 'Shared my Engineering Dynamics textbook! Hope it helps a fellow MinSU student! 📚 #ArawatanExchange',
             'visibility' => 'public',
             'likes_count' => 12,
         ]);
 
-        GalleryPost::create([
+        ForumPost::create([
             'user_id' => $users[1]->id,
             'transaction_id' => $t2->id,
-            'image_path' => 'gallery/placeholder2.jpg',
+            'image_path' => 'forum/placeholder2.jpg',
             'caption' => 'Passed on my calculator to someone who needs it for their finals! Good luck! 🧮 #HAPAG',
             'visibility' => 'public',
             'likes_count' => 8,
         ]);
 
-        GalleryPost::create([
+        ForumPost::create([
             'user_id' => $users[3]->id,
-            'image_path' => 'gallery/placeholder3.jpg',
+            'image_path' => 'forum/placeholder3.jpg',
             'caption' => 'The Arawatan community keeps growing! Loving this initiative 💚 #MinSUCares',
             'visibility' => 'public',
             'likes_count' => 25,

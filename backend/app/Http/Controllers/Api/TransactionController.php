@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Api;
 use App\Http\Controllers\Controller;
 use App\Models\Transaction;
 use App\Models\Item;
+use App\Models\Conversation;
 use App\Models\Notification;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
@@ -138,48 +139,68 @@ class TransactionController extends Controller
     }
 
     /**
-     * Complete a transaction with proof photo.
+     * Complete a transaction (receiver-only).
+     * Points are NOT awarded immediately — they are awarded when admin approves the forum post.
      */
     public function complete(Request $request, Transaction $transaction)
     {
         $user = $request->user();
-        if ($transaction->donor_id !== $user->id && $transaction->receiver_id !== $user->id) {
-            return response()->json(['message' => 'Unauthorized'], 403);
+
+        // Only the receiver can mark as completed
+        if ($transaction->receiver_id !== $user->id) {
+            return response()->json(['message' => 'Only the receiver can mark the transaction as completed.'], 403);
         }
 
         if (!in_array($transaction->status, ['approved', 'meeting'])) {
             return response()->json(['message' => 'Transaction cannot be completed in its current state.'], 422);
         }
 
+        $forumDeadline = now()->addHours(12);
+
         $transaction->update([
             'status' => 'completed',
             'completed_at' => now(),
+            'forum_deadline_at' => $forumDeadline,
         ]);
 
         // Mark item as completed
         $transaction->item->update(['status' => 'completed']);
 
-        // Notify both parties about completion
-        $otherUserId = $user->id === $transaction->donor_id ? $transaction->receiver_id : $transaction->donor_id;
+        // Lock all conversations related to this item
+        Conversation::where('item_id', $transaction->item_id)->update(['is_locked' => true]);
+
+        // Notify the donor about completion
         Notification::notify(
-            $otherUserId,
+            $transaction->donor_id,
             'transaction_completed',
             'Transaction Completed',
-            'The transaction for "' . $transaction->item->title . '" has been completed.',
+            'The transaction for "' . $transaction->item->title . '" has been completed by the receiver.',
             '/browseitem/' . $transaction->item_id,
             $transaction->id,
             'transaction'
         );
 
-        // Award points to donor
-        $donor = $transaction->donor;
-        $donor->increment('points', 10);
-        $this->updateTier($donor);
+        // Notify receiver about forum post deadline
+        Notification::notify(
+            $transaction->receiver_id,
+            'forum_deadline',
+            'Post to Forum',
+            'Please post a photo of your exchange for "' . $transaction->item->title . '" to the forum within 12 hours to earn points!',
+            '/forum',
+            $transaction->id,
+            'transaction'
+        );
 
-        // Award points to receiver
-        $receiver = $transaction->receiver;
-        $receiver->increment('points', 5);
-        $this->updateTier($receiver);
+        // Also notify donor about the forum deadline
+        Notification::notify(
+            $transaction->donor_id,
+            'forum_deadline',
+            'Post to Forum',
+            'The exchange for "' . $transaction->item->title . '" is completed! Post a photo to the forum within 12 hours to earn points.',
+            '/forum',
+            $transaction->id,
+            'transaction'
+        );
 
         return response()->json($transaction->load(['item.images', 'donor', 'receiver']));
     }

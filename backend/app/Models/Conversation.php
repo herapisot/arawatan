@@ -10,7 +10,15 @@ class Conversation extends Model
         'item_id',
         'participant_one_id',
         'participant_two_id',
+        'is_locked',
     ];
+
+    protected function casts(): array
+    {
+        return [
+            'is_locked' => 'boolean',
+        ];
+    }
 
     public function item()
     {

@@ -8,7 +8,7 @@ use App\Models\Item;
 use App\Models\Transaction;
 use App\Models\Verification;
 use App\Models\Report;
-use App\Models\GalleryPost;
+use App\Models\ForumPost;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 
@@ -27,7 +27,9 @@ class AdminDashboardController extends Controller
         $completedTransactions = Transaction::where('status', 'completed')->count();
         $pendingVerifications = Verification::where('status', 'pending')->count();
         $pendingReports = Report::where('status', 'pending')->count();
-        $totalGalleryPosts = GalleryPost::count();
+        $totalForumPosts = ForumPost::count();
+        $pendingForumPosts = ForumPost::where('status', 'pending')->count();
+        $flaggedItems = Report::where('status', 'pending')->count();
 
         // Monthly transactions for chart
         $monthlyTransactions = Transaction::select(
@@ -61,7 +63,9 @@ class AdminDashboardController extends Controller
                 'completed_transactions' => $completedTransactions,
                 'pending_verifications' => $pendingVerifications,
                 'pending_reports' => $pendingReports,
-                'total_gallery_posts' => $totalGalleryPosts,
+                'total_forum_posts' => $totalForumPosts,
+                'pending_forum_posts' => $pendingForumPosts,
+                'flagged_items' => $flaggedItems,
             ],
             'monthly_transactions' => $monthlyTransactions,
             'category_distribution' => $categoryDistribution,

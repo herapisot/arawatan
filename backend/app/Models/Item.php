@@ -14,7 +14,10 @@ class Item extends Model
         'title',
         'description',
         'category',
+        'custom_category',
         'condition',
+        'quantity',
+        'size',
         'campus',
         'meetup_location',
         'status',
@@ -28,6 +31,7 @@ class Item extends Model
         return [
             'is_verified' => 'boolean',
             'views_count' => 'integer',
+            'quantity' => 'integer',
             'posted_at' => 'datetime',
         ];
     }

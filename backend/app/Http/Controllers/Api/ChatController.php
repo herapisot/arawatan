@@ -58,7 +58,7 @@ class ChatController extends Controller
     }
 
     /**
-     * Send a message.
+     * Send a message. Blocked if conversation is locked.
      */
     public function sendMessage(Request $request, Conversation $conversation)
     {
@@ -66,6 +66,11 @@ class ChatController extends Controller
 
         if ($conversation->participant_one_id !== $userId && $conversation->participant_two_id !== $userId) {
             return response()->json(['message' => 'Unauthorized'], 403);
+        }
+
+        // Check if conversation is locked (after transaction completion)
+        if ($conversation->is_locked) {
+            return response()->json(['message' => 'This conversation is locked. The transaction has been completed.'], 422);
         }
 
         $request->validate([

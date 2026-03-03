@@ -7,27 +7,27 @@ use Illuminate\Console\Command;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
 
-class DeleteExpiredGalleryPosts extends Command
+class DeleteExpiredForumPosts extends Command
 {
     /**
      * The name and signature of the console command.
      */
-    protected $signature = 'gallery:delete-expired';
+    protected $signature = 'forum:delete-expired';
 
     /**
      * The console command description.
      */
-    protected $description = 'Delete gallery posts that are older than 30 days';
+    protected $description = 'Delete forum posts that are older than 30 days';
 
     /**
      * Execute the console command.
      */
     public function handle(): int
     {
-        $expiredPosts = GalleryPost::where('created_at', '<', now()->subDays(30))->get();
+        $expiredPosts = ForumPost::where('created_at', '<', now()->subDays(30))->get();
 
         if ($expiredPosts->isEmpty()) {
-            $this->info('No expired gallery posts found.');
+            $this->info('No expired forum posts found.');
             return self::SUCCESS;
         }
 
@@ -43,8 +43,8 @@ class DeleteExpiredGalleryPosts extends Command
             $count++;
         }
 
-        $this->info("Deleted {$count} expired gallery post(s).");
-        Log::info("Scheduled cleanup: Deleted {$count} expired gallery post(s) older than 30 days.");
+        $this->info("Deleted {$count} expired forum post(s).");
+        Log::info("Scheduled cleanup: Deleted {$count} expired forum post(s) older than 30 days.");
 
         return self::SUCCESS;
     }

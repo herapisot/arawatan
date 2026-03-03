@@ -9,22 +9,48 @@ use Illuminate\Http\Request;
 class LeaderboardController extends Controller
 {
     /**
-     * Get leaderboard data.
+     * Anonymous animal aliases for leaderboard display.
+     */
+    private const ANIMAL_ALIASES = [
+        'Brave Eagle', 'Gentle Deer', 'Wise Owl', 'Swift Fox',
+        'Calm Turtle', 'Bold Tiger', 'Kind Dolphin', 'Bright Hawk',
+        'Noble Bear', 'Silent Cat', 'Happy Otter', 'Proud Lion',
+        'Quiet Mouse', 'Warm Sparrow', 'Free Falcon', 'Pure Dove',
+        'Strong Wolf', 'Clever Crow', 'Loyal Dog', 'Graceful Swan',
+        'Playful Panda', 'Busy Bee', 'Mighty Whale', 'Gentle Lamb',
+        'Watchful Heron', 'Friendly Seal', 'Fearless Lynx', 'Merry Robin',
+        'Steady Bison', 'Agile Monkey',
+    ];
+
+    /**
+     * Get leaderboard data with anonymized names.
      */
     public function index(Request $request)
     {
         $period = $request->get('period', 'all-time');
 
-        $query = User::select('id', 'first_name', 'last_name', 'campus', 'tier', 'points', 'avatar_url')
+        $query = User::select('id', 'first_name', 'last_name', 'campus', 'tier', 'points', 'avatar_url', 'anonymous_alias')
             ->where('role', 'user')
             ->where('points', '>', 0)
             ->orderBy('points', 'desc');
 
         $users = $query->limit(100)->get();
 
-        // Add rank
+        // Add rank and anonymize names
         $users = $users->map(function ($user, $index) {
             $user->rank = $index + 1;
+
+            // Assign anonymous alias if not yet set
+            if (!$user->anonymous_alias) {
+                $alias = self::ANIMAL_ALIASES[$user->id % count(self::ANIMAL_ALIASES)] . ' #' . $user->id;
+                $user->update(['anonymous_alias' => $alias]);
+                $user->anonymous_alias = $alias;
+            }
+
+            // Replace real name with anonymous alias for display
+            $user->display_name = $user->anonymous_alias;
+            $user->makeHidden(['first_name', 'last_name']);
+
             return $user;
         });
 

@@ -4,17 +4,43 @@ namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
 use App\Models\User;
+use App\Models\Verification;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Validation\ValidationException;
+use Illuminate\Validation\Rule;
 
 class AuthController extends Controller
 {
     /**
      * Register a new user.
+     *
+     * If a previous user registered with the same email or student_id
+     * but was NEVER verified (verification_status = 'rejected' or 'pending'
+     * AND is_verified = false), that stale account is removed first so
+     * the new registration can proceed.
      */
     public function register(Request $request)
     {
+        // ── Clean up unverified accounts that would block uniqueness ──
+        // Delete users who registered with the same email or student_id
+        // but never completed verification (not verified & not approved).
+        $staleUsers = User::where(function ($q) use ($request) {
+                $q->where('email', $request->email)
+                  ->orWhere('student_id', $request->student_id);
+            })
+            ->where('is_verified', false)
+            ->where('verification_status', '!=', 'approved')
+            ->get();
+
+        foreach ($staleUsers as $staleUser) {
+            // Remove their verification records & tokens first
+            Verification::where('user_id', $staleUser->id)->delete();
+            $staleUser->tokens()->delete();
+            $staleUser->delete();
+        }
+
+        // ── Validate (unique check now only hits verified/approved users) ──
         $validated = $request->validate([
             'first_name' => 'required|string|max:255',
             'last_name' => 'required|string|max:255',

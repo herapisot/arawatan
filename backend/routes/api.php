@@ -6,7 +6,7 @@ use App\Http\Controllers\Api\ItemController;
 use App\Http\Controllers\Api\TransactionController;
 use App\Http\Controllers\Api\VerificationController;
 use App\Http\Controllers\Api\ChatController;
-use App\Http\Controllers\Api\GalleryController;
+use App\Http\Controllers\Api\ForumController;
 use App\Http\Controllers\Api\ProfileController;
 use App\Http\Controllers\Api\LeaderboardController;
 use App\Http\Controllers\Api\ReportController;
@@ -14,6 +14,7 @@ use App\Http\Controllers\Api\NotificationController;
 use App\Http\Controllers\Api\Admin\AdminDashboardController;
 use App\Http\Controllers\Api\Admin\AdminVerificationController;
 use App\Http\Controllers\Api\Admin\AdminModerationController;
+use App\Http\Controllers\Api\Admin\AdminForumController;
 
 /*
 |--------------------------------------------------------------------------
@@ -27,13 +28,14 @@ Route::post('/login', [AuthController::class, 'login']);
 
 // Public item browsing
 Route::get('/items', [ItemController::class, 'index']);
+Route::get('/items/custom-categories', [ItemController::class, 'customCategories']);
 Route::get('/items/{item}', [ItemController::class, 'show']);
 
 // Public leaderboard
 Route::get('/leaderboard', [LeaderboardController::class, 'index']);
 
-// Public gallery
-Route::get('/gallery', [GalleryController::class, 'index']);
+// Public forum
+Route::get('/forum', [ForumController::class, 'index']);
 
 // Authenticated routes
 Route::middleware('auth:sanctum')->group(function () {
@@ -74,10 +76,10 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::post('/conversations/{conversation}/messages', [ChatController::class, 'sendMessage']);
     Route::post('/conversations/start', [ChatController::class, 'startConversation']);
 
-    // Gallery (authenticated)
-    Route::get('/gallery/mine', [GalleryController::class, 'myPosts']);
-    Route::post('/gallery', [GalleryController::class, 'store']);
-    Route::post('/gallery/{galleryPost}/like', [GalleryController::class, 'toggleLike']);
+    // Forum (authenticated)
+    Route::get('/forum/mine', [ForumController::class, 'myPosts']);
+    Route::post('/forum', [ForumController::class, 'store']);
+    Route::post('/forum/{forumPost}/like', [ForumController::class, 'toggleLike']);
 
     // Reports
     Route::post('/items/{item}/report', [ReportController::class, 'reportItem']);
@@ -97,5 +99,10 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::get('/moderation', [AdminModerationController::class, 'index']);
         Route::post('/moderation/{report}/approve', [AdminModerationController::class, 'approveFalsePositive']);
         Route::post('/moderation/{report}/remove', [AdminModerationController::class, 'removeItem']);
+
+        // Forum approval
+        Route::get('/forum', [AdminForumController::class, 'index']);
+        Route::post('/forum/{forumPost}/approve', [AdminForumController::class, 'approve']);
+        Route::post('/forum/{forumPost}/reject', [AdminForumController::class, 'reject']);
     });
 });

@@ -25,6 +25,7 @@ class User extends Authenticatable
         'points',
         'role',
         'avatar_url',
+        'anonymous_alias',
     ];
 
     protected $hidden = [
@@ -91,9 +92,9 @@ class User extends Authenticatable
         return $this->hasMany(Message::class, 'sender_id');
     }
 
-    public function galleryPosts()
+    public function forumPosts()
     {
-        return $this->hasMany(GalleryPost::class);
+        return $this->hasMany(ForumPost::class);
     }
 
     public function badges()
@@ -103,7 +104,7 @@ class User extends Authenticatable
 
     public function likedPosts()
     {
-        return $this->belongsToMany(GalleryPost::class, 'gallery_likes')->withTimestamps();
+        return $this->belongsToMany(ForumPost::class, 'gallery_likes', 'user_id', 'gallery_post_id')->withTimestamps();
     }
 
     public function isAdmin(): bool

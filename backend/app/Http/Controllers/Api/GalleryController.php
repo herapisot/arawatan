@@ -3,7 +3,7 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
-use App\Models\GalleryPost;
+use App\Models\ForumPost;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
 
@@ -14,7 +14,7 @@ class GalleryController extends Controller
      */
     public function index(Request $request)
     {
-        $query = GalleryPost::with(['user', 'transaction.item'])
+        $query = ForumPost::with(['user', 'transaction.item'])
             ->withCount('likes')
             ->where('visibility', 'public')
             ->latest();
@@ -40,7 +40,7 @@ class GalleryController extends Controller
     {
         $userId = $request->user()->id;
 
-        $posts = GalleryPost::with(['user', 'transaction.item'])
+        $posts = ForumPost::with(['user', 'transaction.item'])
             ->withCount('likes')
             ->where('user_id', $userId)
             ->latest()
@@ -68,7 +68,7 @@ class GalleryController extends Controller
 
         $path = $request->file('image')->store('gallery', 'public');
 
-        $post = GalleryPost::create([
+        $post = ForumPost::create([
             'user_id' => $request->user()->id,
             'transaction_id' => $request->transaction_id,
             'image_path' => $path,
@@ -82,24 +82,24 @@ class GalleryController extends Controller
     /**
      * Like/unlike a gallery post.
      */
-    public function toggleLike(Request $request, GalleryPost $galleryPost)
+    public function toggleLike(Request $request, ForumPost $forumPost)
     {
         $userId = $request->user()->id;
-        $isLiked = $galleryPost->likes()->where('user_id', $userId)->exists();
+        $isLiked = $forumPost->likes()->where('user_id', $userId)->exists();
 
         if ($isLiked) {
-            $galleryPost->likes()->detach($userId);
-            $galleryPost->decrement('likes_count');
+            $forumPost->likes()->detach($userId);
+            $forumPost->decrement('likes_count');
             $liked = false;
         } else {
-            $galleryPost->likes()->attach($userId);
-            $galleryPost->increment('likes_count');
+            $forumPost->likes()->attach($userId);
+            $forumPost->increment('likes_count');
             $liked = true;
         }
 
         return response()->json([
             'is_liked' => $liked,
-            'likes_count' => $galleryPost->fresh()->likes_count,
+            'likes_count' => $forumPost->fresh()->likes_count,
         ]);
     }
 }

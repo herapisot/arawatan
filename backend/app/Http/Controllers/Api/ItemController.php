@@ -29,7 +29,15 @@ class ItemController extends Controller
 
         // Category filter
         if ($request->filled('category') && $request->category !== 'all') {
-            $query->where('category', $request->category);
+            // Check if filtering by a custom category
+            $builtIn = ['books', 'electronics', 'clothing', 'supplies', 'equipment', 'furniture', 'sports', 'others'];
+            if (in_array($request->category, $builtIn)) {
+                $query->where('category', $request->category);
+            } else {
+                // Custom category — items stored with category='others' and custom_category=value
+                $query->where('category', 'others')
+                      ->where('custom_category', $request->category);
+            }
         }
 
         // Campus filter
@@ -83,7 +91,10 @@ class ItemController extends Controller
             'title' => 'required|string|max:255',
             'description' => 'required|string',
             'category' => 'required|in:books,electronics,clothing,supplies,equipment,furniture,sports,others',
+            'custom_category' => 'nullable|required_if:category,others|string|max:100',
             'condition' => 'required|in:like-new,excellent,good,fair',
+            'quantity' => 'required|integer|min:1|max:99',
+            'size' => 'nullable|string|in:XS,S,M,L,XL,XXL,28,29,30,31,32,33,34,36,38,40,42',
             'campus' => 'required|in:main,bongabong,victoria,pinamalayan',
             'meetup_location' => 'nullable|string|max:255',
             'images' => 'required|array|min:1|max:5',
@@ -107,7 +118,10 @@ class ItemController extends Controller
             'title' => $validated['title'],
             'description' => $validated['description'],
             'category' => $validated['category'],
+            'custom_category' => $validated['category'] === 'others' ? ($validated['custom_category'] ?? null) : null,
             'condition' => $validated['condition'],
+            'quantity' => $validated['quantity'],
+            'size' => $validated['size'] ?? null,
             'campus' => $validated['campus'],
             'meetup_location' => $validated['meetup_location'] ?? 'Arawatan Corner',
             'status' => 'pending_review',
@@ -153,7 +167,10 @@ class ItemController extends Controller
             'title' => 'sometimes|string|max:255',
             'description' => 'sometimes|string',
             'category' => 'sometimes|in:books,electronics,clothing,supplies,equipment,furniture,sports,others',
+            'custom_category' => 'nullable|required_if:category,others|string|max:100',
             'condition' => 'sometimes|in:like-new,excellent,good,fair',
+            'quantity' => 'sometimes|integer|min:1|max:99',
+            'size' => 'nullable|string|in:XS,S,M,L,XL,XXL,28,29,30,31,32,33,34,36,38,40,42',
             'campus' => 'sometimes|in:main,bongabong,victoria,pinamalayan',
             'meetup_location' => 'sometimes|string|max:255',
         ]);
@@ -193,5 +210,21 @@ class ItemController extends Controller
             ->paginate(12);
 
         return response()->json($items);
+    }
+
+    /**
+     * Get distinct custom categories from active items.
+     */
+    public function customCategories()
+    {
+        $categories = Item::where('status', 'active')
+            ->where('category', 'others')
+            ->whereNotNull('custom_category')
+            ->distinct()
+            ->pluck('custom_category')
+            ->sort()
+            ->values();
+
+        return response()->json($categories);
     }
 }

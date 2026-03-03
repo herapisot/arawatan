@@ -4,17 +4,18 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 
-/**
- * @deprecated Use ForumPost instead
- */
-class GalleryPost extends Model
+class ForumPost extends Model
 {
+    protected $table = 'gallery_posts';
+
     protected $fillable = [
         'user_id',
         'transaction_id',
         'image_path',
         'caption',
         'visibility',
+        'status',
+        'rejection_reason',
         'likes_count',
     ];
 
@@ -37,7 +38,7 @@ class GalleryPost extends Model
 
     public function likes()
     {
-        return $this->belongsToMany(User::class, 'gallery_likes')->withTimestamps();
+        return $this->belongsToMany(User::class, 'gallery_likes', 'gallery_post_id', 'user_id')->withTimestamps();
     }
 
     public function isLikedBy(?User $user): bool

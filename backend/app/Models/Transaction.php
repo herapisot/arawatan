@@ -19,6 +19,7 @@ class Transaction extends Model
         'requested_at',
         'approved_at',
         'completed_at',
+        'forum_deadline_at',
     ];
 
     protected function casts(): array
@@ -27,6 +28,7 @@ class Transaction extends Model
             'requested_at' => 'datetime',
             'approved_at' => 'datetime',
             'completed_at' => 'datetime',
+            'forum_deadline_at' => 'datetime',
         ];
     }
 
@@ -45,8 +47,8 @@ class Transaction extends Model
         return $this->belongsTo(User::class, 'receiver_id');
     }
 
-    public function galleryPost()
+    public function forumPost()
     {
-        return $this->hasOne(GalleryPost::class);
+        return $this->hasOne(ForumPost::class);
     }
 }

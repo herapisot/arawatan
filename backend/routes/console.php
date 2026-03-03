@@ -8,5 +8,5 @@ Artisan::command('inspire', function () {
     $this->comment(Inspiring::quote());
 })->purpose('Display an inspiring quote');
 
-// Auto-delete gallery posts older than 30 days (runs daily at midnight)
-Schedule::command('gallery:delete-expired')->daily();
+// Auto-delete forum posts older than 30 days (runs daily at midnight)
+Schedule::command('forum:delete-expired')->daily();
