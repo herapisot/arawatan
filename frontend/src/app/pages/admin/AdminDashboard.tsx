@@ -202,6 +202,16 @@ export function AdminDashboard() {
                 <Badge variant="destructive">{analytics?.stats?.flagged_items || 0}</Badge>
               </Button>
             </Link>
+
+            <Link to="/admin/forum-approval">
+              <Button variant="outline" className="w-full justify-between">
+                <span className="flex items-center gap-2">
+                  <CheckCircle2 className="h-4 w-4" />
+                  Forum Approval
+                </span>
+                <Badge variant="secondary">{analytics?.stats?.pending_forum_posts || 0}</Badge>
+              </Button>
+            </Link>
             
             <Link to="/admin/analytics">
               <Button variant="outline" className="w-full justify-start">
@@ -251,6 +261,20 @@ export function AdminDashboard() {
                 </Button>
               </Link>
             </div>
+
+            {(analytics?.stats?.pending_forum_posts || 0) > 0 && (
+            <div className="flex items-start justify-between gap-4 p-3 bg-primary/10 rounded-lg">
+              <div className="flex-1">
+                <div className="font-medium">{analytics?.stats?.pending_forum_posts} forum posts pending approval</div>
+                <div className="text-sm text-muted-foreground">Review and approve posts to award points</div>
+              </div>
+              <Link to="/admin/forum-approval">
+                <Button size="sm">
+                  Review <ArrowRight className="ml-2 h-4 w-4" />
+                </Button>
+              </Link>
+            </div>
+            )}
           </div>
         </CardContent>
       </Card>

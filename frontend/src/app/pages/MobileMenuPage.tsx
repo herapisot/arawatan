@@ -50,13 +50,6 @@ export function MobileMenuPage() {
             </button>
           )}
         </div>
-
-        <div className="mt-8 text-sm text-muted-foreground">
-          <h4 className="font-semibold mb-2">About ARAWATAN</h4>
-          <p className="mb-2">The official ARAWATAN platform for Mindoro State University.</p>
-          <div>Email: arawatan@minsu.edu.ph</div>
-          <div>Phone: (+63) 441-104-013</div>
-        </div>
       </main>
       <Footer className="mt-6" />
     </div>

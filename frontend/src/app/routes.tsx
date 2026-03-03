@@ -3,7 +3,7 @@ import { Layout } from "./components/Layout";
 import { ProtectedRoute } from "./components/ProtectedRoute";
 import { LandingPage } from "./pages/LandingPage";
 import { BrowseItemPage } from "./pages/BrowseItemPage";
-import { GalleryPage } from "./pages/GalleryPage";
+import { ForumPage } from "./pages/ForumPage";
 import { LeaderboardPage } from "./pages/LeaderboardPage";
 import { AboutPage } from "./pages/AboutPage";
 import { MobileMenuPage } from "./pages/MobileMenuPage";
@@ -18,6 +18,7 @@ import { AdminDashboard } from "./pages/admin/AdminDashboard";
 import { UserVerificationPanel } from "./pages/admin/UserVerificationPanel";
 import { ItemModerationPanel } from "./pages/admin/ItemModerationPanel";
 import { AnalyticsPage } from "./pages/admin/AnalyticsPage";
+import { ForumApprovalPanel } from "./pages/admin/ForumApprovalPanel";
 import { NotFound } from "./pages/NotFound";
 
 export const router = createBrowserRouter([
@@ -28,7 +29,7 @@ export const router = createBrowserRouter([
       // Public routes - accessible without login
       { index: true, Component: LandingPage },
       { path: "about", Component: AboutPage },
-      { path: "gallery", Component: GalleryPage },
+      { path: "forum", Component: ForumPage },
       { path: "auth", Component: AuthPage },
       { path: "register", Component: AuthPage },
       { path: "profile", element: <ProtectedRoute><ProfilePage /></ProtectedRoute> },
@@ -49,6 +50,7 @@ export const router = createBrowserRouter([
       { index: true, Component: AdminDashboard },
       { path: "verifications", Component: UserVerificationPanel },
       { path: "moderation", Component: ItemModerationPanel },
+      { path: "forum-approval", Component: ForumApprovalPanel },
       { path: "analytics", Component: AnalyticsPage },
     ],
   },

@@ -9,7 +9,8 @@ import {
   Menu,
   X,
   Bell,
-  LogOut
+  LogOut,
+  Image as ImageIcon,
 } from "lucide-react";
 import { useState } from "react";
 import minsuLogo from "../../../assets/7916f883ec8a03e1568c75214e57746fc2beed31.png";
@@ -22,6 +23,7 @@ export function AdminLayout() {
     { name: "Dashboard", path: "/admin", icon: LayoutDashboard, exact: true },
     { name: "User Verifications", path: "/admin/verifications", icon: UserCheck, badge: 12 },
     { name: "Item Moderation", path: "/admin/moderation", icon: ShieldAlert, badge: 5 },
+    { name: "Forum Approval", path: "/admin/forum-approval", icon: ImageIcon },
     { name: "Analytics", path: "/admin/analytics", icon: BarChart3 },
   ];
 

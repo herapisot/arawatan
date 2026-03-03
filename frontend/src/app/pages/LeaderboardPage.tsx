@@ -162,12 +162,12 @@ export function LeaderboardPage() {
                     
                     <Avatar>
                       <AvatarFallback className="bg-primary text-primary-foreground">
-                        {`${contributor.first_name?.[0] || ''}${contributor.last_name?.[0] || ''}`}
+                        {contributor.display_name ? contributor.display_name.split(' ').map((w: string) => w[0]).join('').slice(0, 2).toUpperCase() : '??'}
                       </AvatarFallback>
                     </Avatar>
                     
                     <div className="flex-1">
-                      <div className="font-semibold">{contributor.full_name}</div>
+                      <div className="font-semibold">{contributor.display_name || 'Anonymous'}</div>
                       <Badge variant="outline" className="text-xs mt-1">
                         {contributor.tier}
                       </Badge>
@@ -224,11 +224,11 @@ export function LeaderboardPage() {
                     <div className="text-4xl">{contributor.rank === 1 ? "🥇" : contributor.rank === 2 ? "🥈" : "🥉"}</div>
                     <Avatar className="h-16 w-16 mx-auto">
                       <AvatarFallback className="bg-primary text-primary-foreground text-xl">
-                        {`${contributor.first_name?.[0] || ''}${contributor.last_name?.[0] || ''}`}
+                        {contributor.display_name ? contributor.display_name.split(' ').map((w: string) => w[0]).join('').slice(0, 2).toUpperCase() : '??'}
                       </AvatarFallback>
                     </Avatar>
                     <div>
-                      <div className="font-bold">{contributor.full_name}</div>
+                      <div className="font-bold">{contributor.display_name || 'Anonymous'}</div>
                       <div className="text-2xl font-bold text-primary mt-1">{contributor.points} pts</div>
                       <div className="text-sm text-muted-foreground">{contributor.items_shared} shared</div>
                     </div>

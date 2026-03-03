@@ -16,12 +16,12 @@ import {
   FileImage,
   AlertTriangle,
   UserPlus,
-  LogIn
+  Rocket
 } from "lucide-react";
 
 export function VerificationPage() {
   const navigate = useNavigate();
-  const { user, isAuthenticated, refreshUser, logout } = useAuth();
+  const { user, isAuthenticated, refreshUser } = useAuth();
   const [verificationStatus, setVerificationStatus] = useState<"upload" | "processing" | "approved" | "rejected">("upload");
   const [uploadedFile, setUploadedFile] = useState<File | null>(null);
   const [dragActive, setDragActive] = useState(false);
@@ -158,18 +158,18 @@ export function VerificationPage() {
             verificationStatus === 'approved' ? 'bg-success' : 'bg-border'
           }`} />
 
-          {/* Step 3: Login */}
+          {/* Step 3: Explore */}
           <div className="flex flex-col items-center">
             <div className={`w-10 h-10 rounded-full flex items-center justify-center font-bold text-sm ${
               verificationStatus === 'approved'
-                ? 'bg-primary text-primary-foreground ring-4 ring-primary/20'
+                ? 'bg-success text-white ring-4 ring-success/20'
                 : 'bg-muted text-muted-foreground'
             }`}>
-              <LogIn className="h-5 w-5" />
+              <Rocket className="h-5 w-5" />
             </div>
             <span className={`text-xs mt-1.5 font-medium ${
-              verificationStatus === 'approved' ? 'text-primary' : 'text-muted-foreground'
-            }`}>Login</span>
+              verificationStatus === 'approved' ? 'text-success' : 'text-muted-foreground'
+            }`}>Explore</span>
           </div>
         </div>
 
@@ -310,16 +310,13 @@ export function VerificationPage() {
                 <Button
                   size="lg"
                   className="bg-primary hover:bg-primary/90 text-primary-foreground font-bold px-8"
-                  onClick={async () => {
-                    await logout();
-                    navigate("/");
-                  }}
+                  onClick={() => navigate("/")}
                 >
-                  <LogIn className="h-4 w-4 mr-2" />
-                  Login to Your Account
+                  <Rocket className="h-4 w-4 mr-2" />
+                  Start Exploring
                 </Button>
                 <p className="text-sm text-muted-foreground mt-3">
-                  You'll be redirected to login with your verified account.
+                  Your account is now fully verified. Enjoy all features!
                 </p>
               </div>
             )}

@@ -30,9 +30,14 @@ export function ItemListingPage() {
     title: "",
     description: "",
     category: "",
+    custom_category: "",
     condition: "",
+    quantity: "1",
+    size: "",
     campus: "",
   });
+
+  const categoriesWithSize = ["clothing", "sports"];
 
   const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files) {
@@ -55,7 +60,12 @@ export function ItemListingPage() {
       data.append('title', formData.title);
       data.append('description', formData.description);
       data.append('category', formData.category);
+      if (formData.category === 'others' && formData.custom_category) {
+        data.append('custom_category', formData.custom_category);
+      }
       data.append('condition', formData.condition);
+      data.append('quantity', formData.quantity);
+      if (formData.size) data.append('size', formData.size);
       data.append('campus', formData.campus);
 
       images.forEach((image) => {
@@ -224,6 +234,17 @@ export function ItemListingPage() {
                       <SelectItem value="others">Others</SelectItem>
                     </SelectContent>
                   </Select>
+                  {formData.category === 'others' && (
+                    <div className="mt-2">
+                      <Input
+                        id="custom_category"
+                        value={formData.custom_category}
+                        onChange={(e) => setFormData({ ...formData, custom_category: e.target.value })}
+                        placeholder="Specify your category (e.g., Musical Instrument)"
+                        required
+                      />
+                    </div>
+                  )}
                 </div>
 
                 <div>
@@ -242,6 +263,59 @@ export function ItemListingPage() {
                 </div>
               </div>
 
+              {/* Quantity and Size */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <Label htmlFor="quantity">Quantity *</Label>
+                  <Input
+                    id="quantity"
+                    type="number"
+                    min="1"
+                    max="99"
+                    value={formData.quantity}
+                    onChange={(e) => setFormData({ ...formData, quantity: e.target.value })}
+                    placeholder="1"
+                    required
+                  />
+                  <p className="text-xs text-muted-foreground mt-1">
+                    How many of this item are you donating?
+                  </p>
+                </div>
+
+                {categoriesWithSize.includes(formData.category) && (
+                  <div>
+                    <Label htmlFor="size">Size</Label>
+                    <Select value={formData.size} onValueChange={(value) => setFormData({ ...formData, size: value })}>
+                      <SelectTrigger id="size">
+                        <SelectValue placeholder="Select size (optional)" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="XS">XS</SelectItem>
+                        <SelectItem value="S">S</SelectItem>
+                        <SelectItem value="M">M</SelectItem>
+                        <SelectItem value="L">L</SelectItem>
+                        <SelectItem value="XL">XL</SelectItem>
+                        <SelectItem value="XXL">XXL</SelectItem>
+                        <SelectItem value="28">28</SelectItem>
+                        <SelectItem value="29">29</SelectItem>
+                        <SelectItem value="30">30</SelectItem>
+                        <SelectItem value="31">31</SelectItem>
+                        <SelectItem value="32">32</SelectItem>
+                        <SelectItem value="33">33</SelectItem>
+                        <SelectItem value="34">34</SelectItem>
+                        <SelectItem value="36">36</SelectItem>
+                        <SelectItem value="38">38</SelectItem>
+                        <SelectItem value="40">40</SelectItem>
+                        <SelectItem value="42">42</SelectItem>
+                      </SelectContent>
+                    </Select>
+                    <p className="text-xs text-muted-foreground mt-1">
+                      Applicable for clothing and sports items
+                    </p>
+                  </div>
+                )}
+              </div>
+
               {/* Campus */}
               <div>
                 <Label htmlFor="campus">Pickup Campus *</Label>
@@ -250,10 +324,9 @@ export function ItemListingPage() {
                     <SelectValue placeholder="Select campus" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="main">Main Campus - Calapan City</SelectItem>
+                    <SelectItem value="main">Main - Victoria Campus</SelectItem>
                     <SelectItem value="bongabong">Bongabong Campus</SelectItem>
-                    <SelectItem value="victoria">Victoria Campus</SelectItem>
-                    <SelectItem value="pinamalayan">Pinamalayan Campus</SelectItem>
+                    <SelectItem value="calapan">Calapan Campus</SelectItem>
                   </SelectContent>
                 </Select>
                 <p className="text-xs text-muted-foreground mt-1">
@@ -267,15 +340,6 @@ export function ItemListingPage() {
                 <AlertDescription className="text-sm">
                   <strong>AI Safety Screening:</strong> Your item listing will be automatically screened for prohibited content including 
                   drugs, alcohol, weapons, and other unsafe goods. Listings that violate policies will be rejected.
-                </AlertDescription>
-              </Alert>
-
-              {/* Important Note */}
-              <Alert>
-                <AlertTriangle className="h-4 w-4" />
-                <AlertDescription className="text-sm">
-                  <strong>One Item Per Listing:</strong> You can only list one item at a time. 
-                  Monthly limit: 5 transactions. Current usage: 3/5
                 </AlertDescription>
               </Alert>
 

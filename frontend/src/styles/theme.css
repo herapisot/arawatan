@@ -2,57 +2,54 @@
 
 :root {
   --font-size: 16px;
-  /* MinSU Institutional Colors - Green Gradient Theme */
-  --minsu-green-dark: #1B5E3A;
-  --minsu-green: #238C5B;
-  --minsu-green-light: #3DAF73;
-  --minsu-teal: #1A8B6E;
-  --minsu-emerald: #2D9B6E;
-  --minsu-mint: #D6F5E3;
-  
-  --background: #FFF8E7;
-  --foreground: #1C1C1E;
-  --card: #FFFDF7;
-  --card-foreground: #1C1C1E;
-  --popover: #FFFDF7;
-  --popover-foreground: #1C1C1E;
-  --primary: #1B5E3A;
-  --primary-foreground: #FFFFFF;
-  --secondary: #2D9B6E;
-  --secondary-foreground: #FFFFFF;
-  --muted: #F5E6C8;
-  --muted-foreground: #6B4F3A;
-  --accent: #1A8B6E;
-  --accent-foreground: #FFFFFF;
-  --destructive: #C9302C;
-  --destructive-foreground: #FFFFFF;
+  /* Brand colors derived from provided logo */
+  --brand-dark: #344f1f; /* primary dark */
+  --brand: #344f1f; /* primary */
+  --accent: #f4991a; /* secondary / accent */
+  --white: #ffffff;
+
+  --background: #f4f5f4;
+  --foreground: #1f2933;
+  --card: #ffffff;
+  --card-foreground: #1f2933;
+  --popover: #ffffff;
+  --popover-foreground: #1f2933;
+  --primary: var(--brand);
+  --primary-foreground: var(--white);
+  --secondary: var(--brand-dark);
+  --secondary-foreground: var(--white);
+  --muted: #f0efe9;
+  --muted-foreground: #6b6b6b;
+  --accent-foreground: #ffffff;
+  --destructive: #e55353;
+  --destructive-foreground: #ffffff;
   --success: #3DAF73;
-  --success-foreground: #FFFFFF;
-  --warning: #E6A817;
-  --warning-foreground: #1C1C1E;
-  --border: rgba(212, 165, 116, 0.25);
+  --success-foreground: #ffffff;
+  --warning: var(--accent);
+  --warning-foreground: #1f2933;
+  --border: rgba(52,79,31,0.12);
   --input: transparent;
-  --input-background: #FFFDF7;
-  --switch-background: #D4A574;
+  --input-background: #ffffff;
+  --switch-background: var(--accent);
   --font-weight-medium: 500;
   --font-weight-normal: 400;
   --font-weight-semibold: 600;
   --font-weight-bold: 700;
-  --ring: #238C5B;
-  --chart-1: #1B5E3A;
-  --chart-2: #238C5B;
-  --chart-3: #1A8B6E;
-  --chart-4: #3DAF73;
-  --chart-5: #2D9B6E;
+  --ring: var(--brand-dark);
+  --chart-1: var(--brand-dark);
+  --chart-2: #5a8b3a;
+  --chart-3: var(--accent);
+  --chart-4: #7bcf88;
+  --chart-5: #4a7a34;
   --radius: 0.5rem;
-  --sidebar: #1B5E3A;
-  --sidebar-foreground: #FFFFFF;
-  --sidebar-primary: #3DAF73;
-  --sidebar-primary-foreground: #FFFFFF;
-  --sidebar-accent: #145234;
-  --sidebar-accent-foreground: #FFFFFF;
+  --sidebar: var(--brand-dark);
+  --sidebar-foreground: var(--white);
+  --sidebar-primary: #5a8b3a;
+  --sidebar-primary-foreground: var(--white);
+  --sidebar-accent: #243a1a;
+  --sidebar-accent-foreground: var(--white);
   --sidebar-border: rgba(255, 255, 255, 0.12);
-  --sidebar-ring: #3DAF73;
+  --sidebar-ring: #5a8b3a;
 }
 
 .dark {

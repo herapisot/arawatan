@@ -56,10 +56,9 @@ export function AboutPage() {
   ];
 
   const campuses = [
-    "Main Campus - Calapan City",
+    "Main - Victoria Campus",
     "Bongabong Campus",
-    "Victoria Campus",
-    "Bulalacao Campus",
+    "Calapan Campus",
   ];
 
   return (

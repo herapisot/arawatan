@@ -1,4 +1,5 @@
 import { Outlet, Link, useLocation, useNavigate } from "react-router";
+import Logo from "../../assets/arawatan-logo.svg";
 import { useState, useEffect, useCallback } from "react";
 import { Button } from "./ui/button";
 import { Footer } from "./Footer";
@@ -157,14 +158,14 @@ export function Layout() {
   const publicNavItems = [
     { name: "Home", path: "/", icon: Home },
     { name: "About", path: "/about", icon: Info },
-    { name: "Gallery", path: "/gallery", icon: ImageIcon },
+    { name: "Forum", path: "/forum", icon: ImageIcon },
   ];
 
   // Full nav items (visible only when authenticated)
   const authNavItems = [
     { name: "Home", path: "/", icon: Home },
     { name: "BrowseItem", path: "/browseitem", icon: Store },
-    { name: "Gallery", path: "/gallery", icon: ImageIcon },
+    { name: "Forum", path: "/forum", icon: ImageIcon },
     { name: "Leaderboard", path: "/leaderboard", icon: Trophy },
   ];
 
@@ -173,14 +174,14 @@ export function Layout() {
   const publicMobileNavItems = [
     { name: "Home", path: "/", icon: Home },
     { name: "About", path: "/about", icon: Info },
-    { name: "Gallery", path: "/gallery", icon: ImageIcon },
+    { name: "Forum", path: "/forum", icon: ImageIcon },
   ];
 
   const authMobileNavItems = [
     { name: "Home", path: "/", icon: Home },
     { name: "BrowseItem", path: "/browseitem", icon: Store },
     { name: "Chat", path: "/chat", icon: MessageCircle },
-    { name: "Gallery", path: "/gallery", icon: ImageIcon },
+    { name: "Forum", path: "/forum", icon: ImageIcon },
   ];
 
   const mobileNavItems = (isAuthenticated && isVerified) ? authMobileNavItems : publicMobileNavItems;
@@ -188,15 +189,18 @@ export function Layout() {
   return (
     <div className="min-h-screen flex flex-col">
       {/* Desktop Header */}
-      <header className="shadow-md sticky top-0 z-50" style={{ background: 'linear-gradient(90deg, rgba(27,94,58,0.85) 0%, rgba(77,182,172,0.75) 100%)', backdropFilter: 'blur(6px)' }}>
+      <header className="shadow-md sticky top-0 z-50" style={{ background: 'linear-gradient(90deg, color-mix(in srgb, var(--primary) 80%, transparent) 0%, color-mix(in srgb, var(--accent) 75%, transparent) 100%)', backdropFilter: 'blur(10px)' }}>
         <div className="container mx-auto px-4 py-3 text-white">
           {/* Header Layout */}
           <div className="flex items-center justify-between">
             {/* Logo/Brand */}
-            <Link to="/" className="flex items-center gap-2 hover:opacity-90 transition-opacity">
-              <div>
-                <h1 className="text-xl font-bold leading-tight" style={{ color: '#FFD700', textShadow: '0 2px 8px #000', letterSpacing: '2px' }}>MinSU ARAWATAN</h1>
-                <p className="text-xs italic leading-tight text-white/80">ᜠᜭᜯᜦᜨ᜴</p>
+            <Link to="/" className="flex items-center gap-3 hover:opacity-95 transition-opacity">
+              <div className="flex items-center gap-3">
+                <img src={Logo} alt="ARAWATAN logo" className="h-8 w-8 rounded-md shadow-sm" />
+                <div>
+                  <h1 className="text-xl font-extrabold leading-tight tracking-wide" style={{ fontFamily: "'Playfair Display', serif", color: 'var(--accent)', textShadow: '0 2px 8px rgba(0,0,0,0.4)', letterSpacing: '2px' }}>ARAWATAN</h1>
+                  <p className="text-[11px] italic leading-tight text-white/95" style={{ textShadow: '0 1px 4px rgba(0,0,0,0.3)', letterSpacing: '3px' }}>ᜠᜭᜯᜦᜨ᜴</p>
+                </div>
               </div>
             </Link>
 
@@ -240,7 +244,7 @@ export function Layout() {
                     {notificationOpen && (
                       <>
                         <div className="fixed inset-0 z-[90]" onClick={() => setNotificationOpen(false)} />
-                        <div className="absolute right-0 top-full mt-1 w-80 sm:w-96 bg-popover border border-border rounded-lg shadow-xl z-[100] overflow-hidden">
+                        <div className="absolute right-0 top-full mt-1 w-80 sm:w-96 bg-popover text-popover-foreground border border-border rounded-lg shadow-xl z-[100] overflow-hidden">
                           {/* Header */}
                           <div className="flex items-center justify-between px-4 py-3 border-b border-border">
                             <h3 className="font-bold text-sm">Notifications</h3>
@@ -329,7 +333,7 @@ export function Layout() {
                     {profileDropdownOpen && (
                       <>
                         <div className="fixed inset-0 z-[90]" onClick={() => setProfileDropdownOpen(false)} />
-                        <div className="absolute right-0 top-full mt-1 w-48 bg-popover border border-border rounded-md shadow-lg z-[100] py-1">
+                        <div className="absolute right-0 top-full mt-1 w-48 bg-popover text-popover-foreground border border-border rounded-md shadow-lg z-[100] py-1">
                           <Link
                             to="/profile"
                             className="flex items-center gap-2 px-3 py-2 text-sm hover:bg-muted transition-colors"

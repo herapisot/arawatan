@@ -1,0 +1,13 @@
+<svg width="64" height="64" viewBox="0 0 64 64" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="ARAWATAN logo">
+  <defs>
+    <linearGradient id="g" x1="0" x2="1">
+      <stop offset="0%" stop-color="#344f1f"/>
+      <stop offset="100%" stop-color="#f4991a"/>
+    </linearGradient>
+  </defs>
+  <rect width="64" height="64" rx="12" fill="url(#g)"/>
+  <g transform="translate(8,8)" fill="#ffffff" opacity="0.95">
+    <path d="M8 24c6-10 20-10 26 0-6 10-20 10-26 0z" />
+    <circle cx="14" cy="14" r="6" />
+  </g>
+</svg>

@@ -14,6 +14,7 @@ import {
   ArrowLeft,
   MessageCircle,
   Search,
+  Lock,
 } from "lucide-react";
 import { chatApi } from "../services/api";
 import { useAuth } from "../contexts/AuthContext";
@@ -57,6 +58,7 @@ interface ConversationType {
     sender_id: number;
   };
   unread_count?: number;
+  is_locked?: boolean;
   updated_at: string;
 }
 
@@ -345,6 +347,9 @@ export function ChatPage() {
                         {unread}
                       </Badge>
                     )}
+                    {conv.is_locked && (
+                      <Lock className="h-3.5 w-3.5 text-muted-foreground ml-1 flex-shrink-0" />
+                    )}
                   </div>
                 </div>
               </button>
@@ -492,6 +497,14 @@ export function ChatPage() {
       )}
 
       {/* Input Area */}
+      {activeConversation?.is_locked ? (
+        <div className="px-4 py-3 border-t border-border bg-muted/50">
+          <div className="flex items-center justify-center gap-2 text-muted-foreground text-sm">
+            <AlertTriangle className="h-4 w-4" />
+            <span>This conversation is locked. The transaction has been completed.</span>
+          </div>
+        </div>
+      ) : (
       <div className="px-4 py-3 border-t border-border bg-card">
         <div className="flex gap-2 items-end">
           <input
@@ -526,6 +539,7 @@ export function ChatPage() {
           </Button>
         </div>
       </div>
+      )}
     </div>
   );
 

@@ -84,6 +84,8 @@ export const itemsApi = {
 
   deleteItem: (id: number) => api.delete(`/items/${id}`),
 
+  getCustomCategories: () => api.get('/items/custom-categories'),
+
   myItems: () => api.get('/user/items'),
 
   reportItem: (id: number, reason: string) =>
@@ -150,20 +152,20 @@ export const chatApi = {
     api.post('/conversations/start', { item_id: itemId, recipient_id: recipientId }),
 };
 
-// ==================== Gallery ====================
-export const galleryApi = {
+// ==================== Forum ====================
+export const forumApi = {
   getPosts: (params?: { page?: number; per_page?: number }) =>
-    api.get('/gallery', { params }),
+    api.get('/forum', { params }),
 
-  myPosts: () => api.get('/gallery/mine'),
+  myPosts: () => api.get('/forum/mine'),
 
   createPost: (formData: FormData) =>
-    api.post('/gallery', formData, {
+    api.post('/forum', formData, {
       headers: { 'Content-Type': 'multipart/form-data' },
     }),
 
   toggleLike: (postId: number) =>
-    api.post(`/gallery/${postId}/like`),
+    api.post(`/forum/${postId}/like`),
 };
 
 // ==================== Leaderboard ====================
@@ -221,6 +223,16 @@ export const adminApi = {
 
   removeItem: (id: number, enforcementAction?: string) =>
     api.post(`/admin/moderation/${id}/remove`, { enforcement_action: enforcementAction }),
+
+  // Forum Approval
+  getForumPosts: (status?: string) =>
+    api.get('/admin/forum', { params: { status } }),
+
+  approveForumPost: (id: number) =>
+    api.post(`/admin/forum/${id}/approve`),
+
+  rejectForumPost: (id: number, reason: string) =>
+    api.post(`/admin/forum/${id}/reject`, { reason }),
 };
 
 export default api;

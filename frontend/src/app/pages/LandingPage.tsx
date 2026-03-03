@@ -23,7 +23,7 @@ import hapagE from "../../assets/HAPAG-E.jpg";
 
 export function LandingPage() {
   const navigate = useNavigate();
-  const { isAuthenticated, isVerified } = useAuth();
+  const { isAuthenticated, isVerified, user } = useAuth();
   const [currentBannerIndex, setCurrentBannerIndex] = useState(0);
   const [items, setItems] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
@@ -105,18 +105,21 @@ export function LandingPage() {
   return (
     <div className="pb-20 md:pb-0 bg-background">
       {/* Hero Section with HAPAG Banner */}
-      <section className="relative pt-10 pb-8 md:pt-14 md:pb-10 px-4 overflow-hidden" style={{ color: '#F5DEB3' }}>
-        {/* Background Image */}
-        <div className="absolute inset-0 z-0">
-          <img src={sampleArawatan} alt="" className="w-full h-full object-cover" />
-          <div className="absolute inset-0 bg-gradient-to-b from-primary/80 via-accent/75 to-secondary/85" />
+      <section className="relative min-h-[100dvh] flex flex-col justify-center px-4 overflow-hidden text-white">
+        {/* Background Image with Ken Burns animation */}
+        <div className="absolute inset-0 z-0 overflow-hidden">
+          <img src={sampleArawatan} alt="" className="w-full h-full object-cover scale-110 animate-[kenburns_25s_ease-in-out_infinite_alternate]" />
+          <div className="absolute inset-0 bg-gradient-to-b from-primary/60 via-primary/40 via-50% to-primary/95" />
+          <div className="absolute inset-0 bg-gradient-to-b from-transparent via-transparent via-85% to-accent/60" />
+          {/* Animated light shimmer */}
+          <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/5 to-transparent animate-[shimmer_8s_ease-in-out_infinite]" />
         </div>
-        <div className="container mx-auto max-w-5xl relative z-10">
+        <div className="container mx-auto max-w-5xl relative z-10 py-12 md:py-16">
           {/* Welcome Text */}
-          <div className="text-center mb-8">
-            <h1 className="text-3xl md:text-5xl font-bold mb-3">Welcome to MinSU ARAWATAN</h1>
-            <p className="text-lg md:text-xl mb-2 font-semibold" style={{ color: '#EDD9A3' }}>Sharing Hope, Building Community</p>
-            <p className="text-sm md:text-base opacity-90 max-w-2xl mx-auto mb-4">
+          <div className="text-center mb-12 md:mb-16">
+            <h1 className="text-4xl sm:text-5xl md:text-7xl font-black mb-4 md:mb-6 tracking-tight" style={{ fontFamily: "'Playfair Display', serif", textShadow: '0 4px 20px rgba(0,0,0,0.6), 0 1px 3px rgba(0,0,0,0.4)' }}>Welcome to MinSU<br className="md:hidden" /> ARAWATAN</h1>
+            <p className="text-xl sm:text-2xl md:text-3xl mb-3 md:mb-5 font-bold tracking-wide" style={{ fontFamily: "'Playfair Display', serif", color: 'var(--accent)', textShadow: '0 2px 12px rgba(0,0,0,0.5)' }}>Sharing Hope, Building Community</p>
+            <p className="text-base md:text-xl opacity-95 max-w-2xl mx-auto mb-6 md:mb-8 leading-relaxed" style={{ textShadow: '0 1px 6px rgba(0,0,0,0.4)' }}>
               A community-driven platform where MinSU students share items they no longer need with those who need them most.
             </p>
             {!isAuthenticated && (
@@ -140,8 +143,8 @@ export function LandingPage() {
           </div>
 
           {/* HAPAG Banner Carousel */}
-          <div className="relative w-full rounded-xl overflow-hidden shadow-2xl border-2 border-white/20">
-            <div className="relative h-48 md:h-56">
+          <div className="relative w-full max-w-4xl mx-auto rounded-2xl overflow-hidden shadow-2xl border-2 border-white/20">
+            <div className="relative h-56 md:h-72">
               {slides.map((slide, index) => (
                 <div
                   key={index}
@@ -150,16 +153,16 @@ export function LandingPage() {
                   }`}
                 >
                   <img src={slide.image} alt="" className="absolute inset-0 w-full h-full object-cover" />
-                  <div className="absolute inset-0 bg-gradient-to-br from-primary/75 to-accent/80"></div>
-                  <div className="relative h-full w-full px-6 py-5 flex items-center">
+                  <div className="absolute inset-0 bg-gradient-to-r from-primary/80 via-primary/50 to-accent/40"></div>
+                  <div className="relative h-full w-full px-8 md:px-12 py-6 md:py-8 flex items-center">
                     <div className="flex items-center gap-5 w-full">
-                      <div className="flex-1" style={{ color: '#F5DEB3' }}>
-                        <div className="md:hidden flex items-center gap-2 mb-2">
-                          <span className="text-lg font-normal tracking-wider">be part of <span style={{ fontFamily: "'Dancing Script', cursive" }} className="text-2xl font-bold">HAPAG</span></span>
+                      <div className="flex-1 text-white">
+                        <div className="md:hidden flex items-center gap-2 mb-3">
+                          <span className="text-xl font-normal tracking-wider">be part of <span style={{ fontFamily: "'Dancing Script', cursive" }} className="text-3xl font-bold">HAPAG</span></span>
                         </div>
-                        <h3 className="hidden md:block text-lg md:text-3xl font-normal mb-1 md:mb-2">be part of <span style={{ fontFamily: "'Dancing Script', cursive" }} className="md:text-5xl font-bold">HAPAG</span></h3>
-                        <p className="text-xs md:text-lg font-semibold italic mb-1 md:mb-2" style={{ color: '#EDD9A3' }}>{slide.subtitle}</p>
-                        <p className="text-xs md:text-base opacity-90 leading-relaxed line-clamp-2 mb-3 md:mb-4">{slide.description}</p>
+                        <h3 className="hidden md:block text-xl md:text-4xl font-normal mb-2 md:mb-3">be part of <span style={{ fontFamily: "'Dancing Script', cursive" }} className="md:text-5xl font-bold">HAPAG</span></h3>
+                        <p className="text-sm md:text-lg font-semibold italic mb-2 md:mb-3" style={{ color: 'var(--accent)' }}>{slide.subtitle}</p>
+                        <p className="text-sm md:text-base opacity-90 leading-relaxed line-clamp-3 mb-4 md:mb-5">{slide.description}</p>
                         <Button
                           size="sm"
                           variant="secondary"
@@ -265,9 +268,10 @@ export function LandingPage() {
               <CardFooter className="pt-2 pb-3">
                 <Button
                   className="w-full text-sm"
+                  variant={item.user?.id === user?.id ? "outline" : "default"}
                   onClick={() => handleRequestItem(item.id)}
                 >
-                  Request Item
+                  {item.user?.id === user?.id ? "View Item" : "Request Item"}
                 </Button>
               </CardFooter>
             </Card>

@@ -15,14 +15,18 @@ import {
   Loader2
 } from "lucide-react";
 import { itemsApi } from "../services/api";
+import { useAuth } from "../contexts/AuthContext";
 
 interface ItemData {
   id: number;
   title: string;
   description: string;
   category: string;
+  custom_category?: string;
   condition: string;
   campus: string;
+  quantity?: number;
+  size?: string;
   is_verified: boolean;
   views_count: number;
   user: { id: number; first_name: string; last_name: string; full_name: string };
@@ -32,10 +36,9 @@ interface ItemData {
 const STORAGE_URL = import.meta.env.VITE_STORAGE_URL || 'http://localhost:8000/storage';
 
 const campusLabels: Record<string, string> = {
-  main: "Main Campus",
+  main: "Main - Victoria Campus",
   bongabong: "Bongabong Campus",
-  victoria: "Victoria Campus",
-  pinamalayan: "Pinamalayan Campus",
+  calapan: "Calapan Campus",
 };
 
 const conditionLabels: Record<string, string> = {
@@ -46,13 +49,21 @@ const conditionLabels: Record<string, string> = {
 };
 
 export function BrowseItemPage() {
+  const { user } = useAuth();
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedCategory, setSelectedCategory] = useState("all");
   const [selectedCampus, setSelectedCampus] = useState("all");
   const [selectedCondition, setSelectedCondition] = useState("all");
   const [items, setItems] = useState<ItemData[]>([]);
+  const [customCategories, setCustomCategories] = useState<string[]>([]);
   const [loading, setLoading] = useState(true);
   const [totalItems, setTotalItems] = useState(0);
+
+  useEffect(() => {
+    itemsApi.getCustomCategories().then(res => {
+      setCustomCategories(res.data || []);
+    }).catch(() => {});
+  }, []);
 
   const fetchItems = async () => {
     setLoading(true);
@@ -77,8 +88,9 @@ export function BrowseItemPage() {
     return () => clearTimeout(timer);
   }, [searchQuery, selectedCategory, selectedCampus, selectedCondition]);
 
-  const categories = ["All", "Books", "Electronics", "Clothing", "Supplies", "Equipment", "Furniture", "Sports", "Others"];
-  const campuses = ["All", "Main", "Bongabong", "Victoria", "Pinamalayan"];
+  const baseCategories = ["All", "Books", "Electronics", "Clothing", "Supplies", "Equipment", "Furniture", "Sports"];
+  const allCategories = [...baseCategories, ...customCategories.filter(c => !baseCategories.map(b => b.toLowerCase()).includes(c.toLowerCase()))];
+  const campuses = ["All", "Bongabong", "Victoria", "Calapan"];
   const conditions = ["All", "Like New", "Excellent", "Good", "Fair"];
 
   return (
@@ -123,7 +135,7 @@ export function BrowseItemPage() {
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
-                      {categories.map((cat) => (
+                      {allCategories.map((cat) => (
                         <SelectItem key={cat} value={cat.toLowerCase()}>
                           {cat}
                         </SelectItem>
@@ -215,6 +227,11 @@ export function BrowseItemPage() {
                   <MapPin className="h-4 w-4" />
                   <span>{campusLabels[item.campus] || item.campus}</span>
                 </div>
+
+                <div className="flex items-center gap-2 text-sm text-muted-foreground mb-2">
+                  <span>Qty: {item.quantity || 1}</span>
+                  {item.size && <><span>•</span><span>Size: {item.size}</span></>}
+                </div>
                 
                 <div className="flex items-center gap-2 text-sm">
                   <div className="h-6 w-6 rounded-full bg-primary text-primary-foreground flex items-center justify-center text-xs font-semibold">
@@ -226,7 +243,9 @@ export function BrowseItemPage() {
               
               <CardFooter className="pt-0 pb-4">
                 <Link to={`/browseitem/${item.id}`} className="w-full">
-                  <Button className="w-full">Request Item</Button>
+                  <Button className="w-full" variant={item.user?.id === user?.id ? "outline" : "default"}>
+                    {item.user?.id === user?.id ? "View Item" : "Request Item"}
+                  </Button>
                 </Link>
               </CardFooter>
             </Card>

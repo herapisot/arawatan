@@ -155,7 +155,7 @@ export function TransactionDetailPage() {
       const res = await transactionsApi.complete(transaction.id);
       setTransaction(res.data);
       setTransactionStage("completed");
-      setSuccessMsg("Transaction completed! Points have been awarded.");
+      setSuccessMsg("Transaction completed! Post a photo to the forum within 12 hours to earn points.");
     } catch (err: any) {
       setError(err.response?.data?.message || 'Failed to complete transaction');
     } finally {
@@ -216,7 +216,7 @@ export function TransactionDetailPage() {
   const canRequest = !isDonor && transactionStage === "view" && item.status === "active";
   const canApprove = isDonor && transactionStage === "requested";
   const canStartMeeting = (isDonor || isReceiver) && transactionStage === "approved";
-  const canComplete = (isDonor || isReceiver) && transactionStage === "meeting";
+  const canComplete = isReceiver && transactionStage === "meeting";
   const canUploadProof = (isDonor || isReceiver) && ["approved", "meeting"].includes(transactionStage);
   const canCancel = (isDonor || isReceiver) && ["requested", "approved", "meeting"].includes(transactionStage);
   const hasTransaction = transactionStage !== "view";
@@ -281,7 +281,7 @@ export function TransactionDetailPage() {
                     <CardTitle className="text-2xl mb-2">{item.title}</CardTitle>
                     <div className="flex flex-wrap gap-2 mb-3">
                       <Badge variant="secondary">{conditionLabels[item.condition] || item.condition}</Badge>
-                      <Badge variant="outline">{item.category}</Badge>
+                      <Badge variant="outline">{item.category === 'others' && item.custom_category ? item.custom_category : item.category}</Badge>
                     </div>
                   </div>
                   <Button variant="outline" size="icon">
@@ -310,6 +310,16 @@ export function TransactionDetailPage() {
                       <span className="font-medium">{new Date(item.created_at).toLocaleDateString()}</span>
                     </div>
                   </div>
+                  <div>
+                    <div className="text-sm text-muted-foreground mb-1">Quantity</div>
+                    <div className="font-medium">{item.quantity || 1}</div>
+                  </div>
+                  {item.size && (
+                    <div>
+                      <div className="text-sm text-muted-foreground mb-1">Size</div>
+                      <div className="font-medium">{item.size}</div>
+                    </div>
+                  )}
                 </div>
 
                 <div>
@@ -393,12 +403,22 @@ export function TransactionDetailPage() {
                       </>
                     )}
 
-                    {/* Both: Complete transaction */}
+                    {/* Receiver: Complete transaction */}
                     {canComplete && (
                       <Button className="w-full" onClick={handleComplete} disabled={actionLoading}>
                         {actionLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <CheckCircle2 className="mr-2 h-4 w-4" />}
                         Complete Transaction
                       </Button>
+                    )}
+
+                    {/* Donor waiting for receiver to complete */}
+                    {isDonor && transactionStage === "meeting" && (
+                      <Alert>
+                        <Clock className="h-4 w-4" />
+                        <AlertDescription>
+                          Waiting for the receiver to confirm the exchange is complete.
+                        </AlertDescription>
+                      </Alert>
                     )}
 
                     {/* Cancel */}
@@ -518,7 +538,10 @@ export function TransactionDetailPage() {
                   <Alert className="border-success text-success">
                     <CheckCircle2 className="h-4 w-4" />
                     <AlertDescription>
-                      Transaction completed successfully! Points have been awarded.
+                      Transaction completed! Post a photo to the forum within 12 hours to earn your points.
+                      {transaction?.forum_deadline_at && (
+                        <span className="block text-xs mt-1">Deadline: {new Date(transaction.forum_deadline_at).toLocaleString()}</span>
+                      )}
                     </AlertDescription>
                   </Alert>
                 )}
