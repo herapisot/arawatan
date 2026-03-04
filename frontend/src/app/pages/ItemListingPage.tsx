@@ -18,6 +18,7 @@ import {
 } from "lucide-react";
 import { itemsApi } from "../services/api";
 import { useAuth } from "../contexts/AuthContext";
+import { sileo } from "sileo";
 
 export function ItemListingPage() {
   const navigate = useNavigate();
@@ -74,13 +75,17 @@ export function ItemListingPage() {
 
       await itemsApi.createItem(data);
       setSuccess(true);
+      sileo.success({ title: "Item Listed!", description: "Your item has been listed successfully. Redirecting..." });
       setTimeout(() => navigate("/browseitem"), 2000);
     } catch (err: any) {
       if (err.response?.data?.errors) {
         const errors = Object.values(err.response.data.errors).flat().join(', ');
         setError(errors);
+        sileo.error({ title: "Listing Error", description: errors });
       } else {
-        setError(err.response?.data?.message || 'Failed to create listing');
+        const msg = err.response?.data?.message || 'Failed to create listing';
+        setError(msg);
+        sileo.error({ title: "Listing Failed", description: msg });
       }
     } finally {
       setSubmitting(false);

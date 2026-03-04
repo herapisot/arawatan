@@ -3,6 +3,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "../../components/ui/ca
 import { Badge } from "../../components/ui/badge";
 import { Button } from "../../components/ui/button";
 import { Avatar, AvatarFallback } from "../../components/ui/avatar";
+import { sileo } from "sileo";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "../../components/ui/dialog";
 import { Textarea } from "../../components/ui/textarea";
 import {
@@ -62,6 +63,7 @@ export function ForumApprovalPanel() {
       setPosts(res.data.data || []);
     } catch (err) {
       console.error("Failed to load forum posts:", err);
+      sileo.error({ title: "Error", description: "Failed to load forum posts." });
     } finally {
       setLoading(false);
     }
@@ -80,6 +82,7 @@ export function ForumApprovalPanel() {
       );
     } catch (err) {
       console.error("Failed to approve post:", err);
+      sileo.error({ title: "Error", description: "Failed to approve post." });
     } finally {
       setActionLoading(null);
     }
@@ -108,6 +111,7 @@ export function ForumApprovalPanel() {
       setRejectReason("");
     } catch (err) {
       console.error("Failed to reject post:", err);
+      sileo.error({ title: "Error", description: "Failed to reject post." });
     } finally {
       setActionLoading(null);
     }

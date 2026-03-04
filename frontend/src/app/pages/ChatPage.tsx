@@ -1,5 +1,6 @@
 import { useState, useRef, useEffect, useCallback } from "react";
 import { useParams, useNavigate } from "react-router";
+import { sileo } from "sileo";
 import { Button } from "../components/ui/button";
 import { Card } from "../components/ui/card";
 import { Input } from "../components/ui/input";
@@ -134,6 +135,7 @@ export function ChatPage() {
         }
       } catch (err) {
         console.error("Failed to load conversations:", err);
+        sileo.error({ title: "Error", description: "Failed to load conversations." });
       } finally {
         setLoading(false);
       }
@@ -192,6 +194,7 @@ export function ChatPage() {
       scrollToBottom();
     } catch (err) {
       console.error("Failed to load messages:", err);
+      sileo.error({ title: "Error", description: "Failed to load messages." });
     } finally {
       setMessagesLoading(false);
     }
@@ -236,6 +239,7 @@ export function ChatPage() {
       );
     } catch (err) {
       console.error("Failed to send message:", err);
+      sileo.error({ title: "Error", description: "Failed to send message." });
     } finally {
       setSending(false);
     }

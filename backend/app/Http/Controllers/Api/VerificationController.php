@@ -140,7 +140,7 @@ class VerificationController extends Controller
         if ($analysis['institution_found']) {
             $confidenceScore += 10;
         } else {
-            $reasons[] = 'The ID does not appear to be from Mindanao State University (MinSU).';
+            $reasons[] = 'The ID does not appear to be from Mindoro State University (MinSU).';
         }
 
         // 5d. Logo comparison with reference image (bonus)

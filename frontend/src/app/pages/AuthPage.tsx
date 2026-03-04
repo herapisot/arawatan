@@ -22,6 +22,7 @@ import {
 } from "lucide-react";
 import { useAuth } from "../contexts/AuthContext";
 import { verificationApi } from "../services/api";
+import { sileo } from "sileo";
 import minsuBuilding from "../../assets/minsu-building.jpg";
 
 type Tab = "login" | "register";
@@ -84,7 +85,9 @@ export function AuthPage() {
       navigate("/");
     } catch (err: unknown) {
       const error = err as { response?: { data?: { message?: string } } };
-      setLoginError(error.response?.data?.message || "Login failed. Please check your credentials.");
+      const msg = error.response?.data?.message || "Login failed. Please check your credentials.";
+      setLoginError(msg);
+      sileo.error({ title: "Login Failed", description: msg });
     } finally {
       setLoginLoading(false);
     }
@@ -111,10 +114,12 @@ export function AuthPage() {
 
     if (formData.password !== formData.confirmPassword) {
       setRegError("Passwords do not match.");
+      sileo.error({ title: "Validation Error", description: "Passwords do not match." });
       return;
     }
     if (!idFile) {
       setRegError("Please upload your MinSU ID for verification.");
+      sileo.error({ title: "Missing ID", description: "Please upload your MinSU ID for verification." });
       return;
     }
 
@@ -149,21 +154,28 @@ export function AuthPage() {
       await new Promise((r) => setTimeout(r, 1200));
 
       if (res.data.status === "approved") {
+        sileo.success({ title: "Verified!", description: "Your MinSU ID has been verified successfully." });
         // Log out so user re-authenticates cleanly
         await logout();
         // Show success popup with login link
         setRegisterStep("verified");
       } else {
-        setRejectionReason(res.data.message || "Verification failed.");
+        const reason = res.data.message || "Verification failed.";
+        setRejectionReason(reason);
+        sileo.error({ title: "Verification Failed", description: reason });
         setRegisterStep("rejected");
       }
     } catch (err: unknown) {
       const error = err as { response?: { data?: { message?: string; errors?: Record<string, string[]> } } };
       if (error.response?.data?.errors) {
         const firstError = Object.values(error.response.data.errors)[0];
-        setRegError(Array.isArray(firstError) ? firstError[0] : String(firstError));
+        const msg = Array.isArray(firstError) ? firstError[0] : String(firstError);
+        setRegError(msg);
+        sileo.error({ title: "Registration Error", description: msg });
       } else {
-        setRegError(error.response?.data?.message || "Registration failed. Please try again.");
+        const msg = error.response?.data?.message || "Registration failed. Please try again.";
+        setRegError(msg);
+        sileo.error({ title: "Registration Failed", description: msg });
       }
       setRegisterStep("form");
       setProgress(0);

@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "../../components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "../../components/ui/tabs";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "../../components/ui/select";
+import { sileo } from "sileo";
 import { 
   Users,
   ShoppingBag,
@@ -40,6 +41,7 @@ export function AnalyticsPage() {
         setAnalytics(res.data);
       } catch (err) {
         console.error('Failed to load analytics:', err);
+        sileo.error({ title: "Error", description: "Failed to load analytics data." });
       } finally {
         setLoading(false);
       }

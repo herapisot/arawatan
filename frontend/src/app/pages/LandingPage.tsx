@@ -14,6 +14,7 @@ import { useState, useEffect } from "react";
 import { ImageWithFallback } from "../components/figma/ImageWithFallback";
 import { itemsApi } from "../services/api";
 import { useAuth } from "../contexts/AuthContext";
+import { sileo } from "sileo";
 import sampleArawatan from "../../assets/sample-arawatan.jpg";
 import hapagA from "../../assets/HAPAG-A.jpg";
 import hapagB from "../../assets/HAPAG-B.jpg";
@@ -43,6 +44,7 @@ export function LandingPage() {
         setItems(res.data.data || []);
       } catch (err) {
         console.error('Failed to fetch items:', err);
+        sileo.error({ title: "Error", description: "Failed to load latest items." });
       } finally {
         setLoading(false);
       }

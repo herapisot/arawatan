@@ -3,6 +3,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "../../components/ui/ca
 import { Button } from "../../components/ui/button";
 import { Badge } from "../../components/ui/badge";
 import { Avatar, AvatarFallback } from "../../components/ui/avatar";
+import { sileo } from "sileo";
 import { Progress } from "../../components/ui/progress";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "../../components/ui/tabs";
 import { Alert, AlertDescription } from "../../components/ui/alert";
@@ -31,6 +32,7 @@ export function UserVerificationPanel() {
         setVerifications(res.data.data || res.data);
       } catch (err) {
         console.error('Failed to load verifications:', err);
+        sileo.error({ title: "Error", description: "Failed to load verifications." });
       } finally {
         setLoading(false);
       }
@@ -45,6 +47,7 @@ export function UserVerificationPanel() {
       setVerifications(prev => prev.filter(v => v.id !== id));
     } catch (err) {
       console.error('Failed to approve verification:', err);
+      sileo.error({ title: "Error", description: "Failed to approve verification." });
     }
   };
 
@@ -56,6 +59,7 @@ export function UserVerificationPanel() {
       setVerifications(prev => prev.filter(v => v.id !== id));
     } catch (err) {
       console.error('Failed to reject verification:', err);
+      sileo.error({ title: "Error", description: "Failed to reject verification." });
     }
   };
 

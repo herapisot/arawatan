@@ -3,6 +3,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "../components/ui/card"
 import { Button } from "../components/ui/button";
 import { Badge } from "../components/ui/badge";
 import { Avatar, AvatarFallback } from "../components/ui/avatar";
+import { sileo } from "sileo";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "../components/ui/tabs";
 import { Progress } from "../components/ui/progress";
 import { Link } from "react-router";
@@ -88,6 +89,7 @@ export function ProfilePage() {
         setMyDonations(donationsRes?.data?.data || donationsRes?.data || []);
       } catch (err) {
         console.error('Failed to load profile:', err);
+        sileo.error({ title: "Error", description: "Failed to load profile data." });
         // Last resort fallback from auth context
         if (authUser) {
           setProfile({
@@ -365,6 +367,7 @@ export function ProfilePage() {
                                 );
                               } catch (err) {
                                 console.error('Failed to approve:', err);
+                                sileo.error({ title: "Error", description: "Failed to approve donation." });
                               } finally {
                                 setApproveLoadingId(null);
                               }

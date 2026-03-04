@@ -3,6 +3,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "../../components/ui/ca
 import { Button } from "../../components/ui/button";
 import { Badge } from "../../components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "../../components/ui/tabs";
+import { sileo } from "sileo";
 import { Alert, AlertDescription } from "../../components/ui/alert";
 import { 
   ShieldAlert,
@@ -28,6 +29,7 @@ export function ItemModerationPanel() {
         setReports(res.data.data || res.data);
       } catch (err) {
         console.error('Failed to load moderation data:', err);
+        sileo.error({ title: "Error", description: "Failed to load moderation data." });
       } finally {
         setLoading(false);
       }
@@ -55,6 +57,7 @@ export function ItemModerationPanel() {
       setReports(prev => prev.filter(r => r.id !== id));
     } catch (err) {
       console.error('Failed to approve:', err);
+      sileo.error({ title: "Error", description: "Failed to approve item." });
     }
   };
 
@@ -64,6 +67,7 @@ export function ItemModerationPanel() {
       setReports(prev => prev.filter(r => r.id !== id));
     } catch (err) {
       console.error('Failed to remove:', err);
+      sileo.error({ title: "Error", description: "Failed to remove item." });
     }
   };
 

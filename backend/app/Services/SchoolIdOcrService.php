@@ -29,10 +29,10 @@ class SchoolIdOcrService
      * Checked case-insensitively against the OCR text.
      */
     protected const INSTITUTION_KEYWORDS = [
-        'mindanao state university',
+        'mindoro state university',
         'minsu',
         'min. state university',
-        'mindanao state univ',
+        'mindoro state univ',
         'msu',
     ];
 
@@ -244,12 +244,12 @@ class SchoolIdOcrService
             }
         }
 
-        // Fuzzy check for OCR misreads of "mindanao state university"
+        // Fuzzy check for OCR misreads of "mindoro state university"
         // e.g. "Mindanac State Universily"
         $ocrWords = preg_split('/\s+/', $ocrLower);
         $ocrJoined = implode(' ', $ocrWords);
 
-        foreach (['mindanao state university'] as $phrase) {
+        foreach (['mindoro state university'] as $phrase) {
             similar_text($phrase, $ocrJoined, $percent);
             // Only use this for the full phrase when enough text is present
             if ($percent >= 70.0 && strlen($ocrJoined) >= strlen($phrase) * 0.7) {

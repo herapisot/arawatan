@@ -7,7 +7,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "../co
 import { Badge } from "../components/ui/badge";
 import { Alert, AlertDescription } from "../components/ui/alert";
 import { Progress } from "../components/ui/progress";
-import { 
+import {
   Upload, 
   CheckCircle2, 
   XCircle, 
@@ -18,6 +18,7 @@ import {
   UserPlus,
   Rocket
 } from "lucide-react";
+import { sileo } from "sileo";
 
 export function VerificationPage() {
   const navigate = useNavigate();
@@ -76,7 +77,9 @@ export function VerificationPage() {
         }
       }, 500);
     } catch (err: any) {
-      setErrorMsg(err.response?.data?.message || 'Upload failed');
+      const msg = err.response?.data?.message || 'Upload failed';
+      setErrorMsg(msg);
+      sileo.error({ title: "Upload Failed", description: msg });
       setVerificationStatus('upload');
       setProgress(0);
     }

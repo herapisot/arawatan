@@ -13,6 +13,7 @@ import {
   ArrowRight,
 } from "lucide-react";
 import { notificationApi } from "../services/api";
+import { sileo } from "sileo";
 
 interface NotificationType {
   id: number;
@@ -80,6 +81,7 @@ export function NotificationsPage() {
       setHasMore(pageNum < lastPage);
     } catch (err) {
       console.error("Failed to load notifications:", err);
+      sileo.error({ title: "Error", description: "Failed to load notifications." });
     }
   }, []);
 

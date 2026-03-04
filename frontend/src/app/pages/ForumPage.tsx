@@ -20,6 +20,7 @@ import {
 } from "lucide-react";
 import { forumApi } from "../services/api";
 import { useAuth } from "../contexts/AuthContext";
+import { sileo } from "sileo";
 
 export function ForumPage() {
   const { user, isAuthenticated } = useAuth();
@@ -43,6 +44,7 @@ export function ForumPage() {
       setForumItems(res.data.data || []);
     } catch (err) {
       console.error('Failed to load forum:', err);
+      sileo.error({ title: "Load Failed", description: "Failed to load forum posts." });
     } finally {
       setLoading(false);
     }
@@ -60,6 +62,7 @@ export function ForumPage() {
       ));
     } catch (err) {
       console.error('Failed to toggle like:', err);
+      sileo.error({ title: "Error", description: "Failed to toggle like." });
     }
   };
 
@@ -96,7 +99,7 @@ export function ForumPage() {
     } catch (err: any) {
       console.error('Failed to upload:', err);
       const errorMsg = err.response?.data?.message || err.message || 'Unknown error';
-      alert(`Error posting to forum: ${errorMsg}`);
+      sileo.error({ title: "Upload Failed", description: errorMsg });
     } finally {
       setUploading(false);
     }
@@ -233,7 +236,7 @@ export function ForumPage() {
         </div>
         )}
 
-        {/* Info Banner */}
+        {/* Info Banner 
         <Card className="mt-8 bg-success/10 border-success/20">
           <CardContent className="pt-6">
             <div className="text-center">
@@ -258,7 +261,7 @@ export function ForumPage() {
               )}
             </div>
           </CardContent>
-        </Card>
+        </Card> */}
 
         {/* Upload Dialog with Caption */}
         <Dialog open={uploadDialogOpen} onOpenChange={handleDialogClose}>

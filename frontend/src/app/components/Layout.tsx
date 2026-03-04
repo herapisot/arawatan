@@ -19,6 +19,7 @@ import {
 } from "lucide-react";
 import { useAuth } from "../contexts/AuthContext";
 import { notificationApi } from "../services/api";
+import { sileo } from "sileo";
 
 interface NotificationType {
   id: number;
@@ -71,7 +72,9 @@ export function Layout() {
       setLoginPassword("");
     } catch (err: unknown) {
       const error = err as { response?: { data?: { message?: string } } };
-      setLoginError(error.response?.data?.message || "Login failed. Please check your credentials.");
+      const msg = error.response?.data?.message || "Login failed. Please check your credentials.";
+      setLoginError(msg);
+      sileo.error({ title: "Login Failed", description: msg });
     } finally {
       setLoginLoading(false);
     }

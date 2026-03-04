@@ -3,6 +3,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "../../components/ui/ca
 import { Badge } from "../../components/ui/badge";
 import { Button } from "../../components/ui/button";
 import { Link } from "react-router";
+import { sileo } from "sileo";
 import { 
   Users,
   UserCheck,
@@ -30,6 +31,7 @@ export function AdminDashboard() {
         setAnalytics(res.data);
       } catch (err) {
         console.error('Failed to load analytics:', err);
+        sileo.error({ title: "Error", description: "Failed to load dashboard data." });
       } finally {
         setLoading(false);
       }

@@ -14,6 +14,7 @@ import {
 } from "lucide-react";
 import { leaderboardApi } from "../services/api";
 import { useAuth } from "../contexts/AuthContext";
+import { sileo } from "sileo";
 
 export function LeaderboardPage() {
   const { user } = useAuth();
@@ -29,6 +30,7 @@ export function LeaderboardPage() {
         setCurrentUserRank(res.data.current_user_rank || 0);
       } catch (err) {
         console.error('Failed to load leaderboard:', err);
+        sileo.error({ title: "Error", description: "Failed to load leaderboard." });
       } finally {
         setLoading(false);
       }

@@ -23,6 +23,7 @@ import {
 } from "lucide-react";
 import { useAuth } from "../contexts/AuthContext";
 import { verificationApi, authApi } from "../services/api";
+import { sileo } from "sileo";
 
 export function RegistrationPage() {
   const navigate = useNavigate();
@@ -91,11 +92,13 @@ export function RegistrationPage() {
 
     if (formData.password !== formData.confirmPassword) {
       setError("Passwords do not match.");
+      sileo.error({ title: "Validation Error", description: "Passwords do not match." });
       return;
     }
 
     if (!idFile) {
       setError("Please upload your MinSU ID for verification.");
+      sileo.error({ title: "Missing ID", description: "Please upload your MinSU ID for verification." });
       return;
     }
 
@@ -144,9 +147,13 @@ export function RegistrationPage() {
       const error = err as { response?: { data?: { message?: string; errors?: Record<string, string[]> } } };
       if (error.response?.data?.errors) {
         const firstError = Object.values(error.response.data.errors)[0];
-        setError(Array.isArray(firstError) ? firstError[0] : String(firstError));
+        const msg = Array.isArray(firstError) ? firstError[0] : String(firstError);
+        setError(msg);
+        sileo.error({ title: "Registration Error", description: msg });
       } else {
-        setError(error.response?.data?.message || "Registration failed. Please try again.");
+        const msg = error.response?.data?.message || "Registration failed. Please try again.";
+        setError(msg);
+        sileo.error({ title: "Registration Failed", description: msg });
       }
       setStep("form");
       setProgress(0);
@@ -170,7 +177,9 @@ export function RegistrationPage() {
       navigate("/");
     } catch (err: unknown) {
       const error = err as { response?: { data?: { message?: string } } };
-      setLoginError(error.response?.data?.message || "Login failed. Please check your credentials.");
+      const msg = error.response?.data?.message || "Login failed. Please check your credentials.";
+      setLoginError(msg);
+      sileo.error({ title: "Login Failed", description: msg });
     } finally {
       setLoginLoading(false);
     }

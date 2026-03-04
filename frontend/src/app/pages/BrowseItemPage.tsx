@@ -16,6 +16,7 @@ import {
 } from "lucide-react";
 import { itemsApi } from "../services/api";
 import { useAuth } from "../contexts/AuthContext";
+import { sileo } from "sileo";
 
 interface ItemData {
   id: number;
@@ -78,6 +79,7 @@ export function BrowseItemPage() {
       setTotalItems(response.data.total || 0);
     } catch (err) {
       console.error("Failed to fetch items:", err);
+      sileo.error({ title: "Error", description: "Failed to load items. Please try again." });
     } finally {
       setLoading(false);
     }
