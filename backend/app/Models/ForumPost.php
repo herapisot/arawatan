@@ -3,9 +3,13 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
+use App\Traits\HasEncryptedId;
 
 class ForumPost extends Model
 {
+    use HasEncryptedId;
+
+    protected $appends = ['encrypted_id'];
     protected $table = 'gallery_posts';
 
     protected $fillable = [

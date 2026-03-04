@@ -5,15 +5,20 @@ namespace App\Http\Controllers\Api;
 use App\Http\Controllers\Controller;
 use App\Models\Report;
 use App\Models\Item;
+use App\Traits\EncryptsRouteIds;
 use Illuminate\Http\Request;
 
 class ReportController extends Controller
 {
+    use EncryptsRouteIds;
     /**
      * Report/flag an item.
      */
-    public function reportItem(Request $request, Item $item)
+    public function reportItem(Request $request, string $encryptedId)
     {
+        $item = $this->findByEncryptedId($encryptedId, Item::class);
+        if ($this->isErrorResponse($item)) return $item;
+
         $request->validate([
             'reason' => 'required|string|max:500',
         ]);

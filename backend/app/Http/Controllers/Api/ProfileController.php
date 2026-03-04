@@ -4,11 +4,13 @@ namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
 use App\Models\User;
+use App\Traits\EncryptsRouteIds;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
 
 class ProfileController extends Controller
 {
+    use EncryptsRouteIds;
     /**
      * Get authenticated user's profile with stats.
      */
@@ -62,8 +64,11 @@ class ProfileController extends Controller
     /**
      * Get a public user profile.
      */
-    public function publicProfile(User $user)
+    public function publicProfile(string $encryptedId)
     {
+        $user = $this->findByEncryptedId($encryptedId, User::class);
+        if ($this->isErrorResponse($user)) return $user;
+
         $user->load('badges');
 
         $stats = [

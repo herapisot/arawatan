@@ -31,10 +31,9 @@ export function LandingPage() {
   const STORAGE_URL = import.meta.env.VITE_STORAGE_URL || 'http://localhost:8000/storage';
 
   const campusLabels: Record<string, string> = {
-    main: "Main Campus",
+    main: "Main - Victoria Campus",
     bongabong: "Bongabong Campus",
-    victoria: "Victoria Campus",
-    pinamalayan: "Pinamalayan Campus",
+    calapan: "Calapan Campus",
   };
 
   useEffect(() => {
@@ -58,19 +57,19 @@ export function LandingPage() {
       title: "be part of HAPAG",
       subtitle: "Handog Alaga, Pagkain, At Ginhawa",
       description: "Project HAPAG provides food, essentials, and care to MinSU students in need. Your small act of kindness can make a big difference—donate today!",
-      cta: "Donate Now",
+      cta: "Fund Me",
     },
     {
       title: "be part of HAPAG",
-      subtitle: "Feed a Fellow Student",
+      subtitle: "Handog Alaga, Pagkain, At Ginhawa",
       description: "Your donation can feed a hungry student. Every contribution counts toward helping our MinSU community thrive through Project HAPAG.",
-      cta: "Donate Now",
+      cta: "Fund Me",
     },
     {
       title: "be part of HAPAG",
-      subtitle: "No Student Left Hungry",
+      subtitle: "Handog Alaga, Pagkain, At Ginhawa",
       description: "Hunger shouldn't be part of your college experience. Help sustain Project HAPAG and support your classmates with food and essentials.",
-      cta: "Donate Now",
+      cta: "Fund Me",
     },
   ];
 
@@ -82,17 +81,17 @@ export function LandingPage() {
   useEffect(() => {
     const interval = setInterval(() => {
       setCurrentBannerIndex((prev) => (prev + 1) % slides.length);
-    }, 5000);
+    }, 3000);
     return () => clearInterval(interval);
   }, [slides.length]);
 
-  const handleRequestItem = (itemId: number) => {
+  const handleRequestItem = (encryptedId: string) => {
     if (!isAuthenticated) {
       navigate("/auth");
     } else if (!isVerified) {
       navigate("/auth?tab=register");
     } else {
-      navigate(`/browseitem/${itemId}`);
+      navigate(`/browseitem/${encryptedId}`);
     }
   };
 
@@ -119,8 +118,8 @@ export function LandingPage() {
         <div className="container mx-auto max-w-5xl relative z-10 py-12 md:py-16">
           {/* Welcome Text */}
           <div className="text-center mb-12 md:mb-16">
-            <h1 className="text-4xl sm:text-5xl md:text-7xl font-black mb-4 md:mb-6 tracking-tight" style={{ fontFamily: "'Playfair Display', serif", textShadow: '0 4px 20px rgba(0,0,0,0.6), 0 1px 3px rgba(0,0,0,0.4)' }}>Welcome to MinSU<br className="md:hidden" /> ARAWATAN</h1>
-            <p className="text-xl sm:text-2xl md:text-3xl mb-3 md:mb-5 font-bold tracking-wide" style={{ fontFamily: "'Playfair Display', serif", color: 'var(--accent)', textShadow: '0 2px 12px rgba(0,0,0,0.5)' }}>Sharing Hope, Building Community</p>
+            <h1 className="text-4xl sm:text-5xl md:text-7xl font-black mb-4 md:mb-6 tracking-tight" style={{ fontFamily: "'Playfair Display', montserrat", textShadow: '0 4px 20px rgba(0,0,0,0.6), 0 1px 3px rgba(0,0,0,0.4)' }}>Welcome to MinSU<br className="md:hidden" /> ARAWATAN</h1>
+            <p className="text-xl sm:text-2xl md:text-3xl mb-3 md:mb-5 font-bold tracking-wide" style={{ fontFamily: "'Playfair Display', montserrat", color: 'var(--accent)', textShadow: '0 2px 12px rgba(0,0,0,0.5)' }}>Sharing Hope, Building Community</p>
             <p className="text-base md:text-xl opacity-95 max-w-2xl mx-auto mb-6 md:mb-8 leading-relaxed" style={{ textShadow: '0 1px 6px rgba(0,0,0,0.4)' }}>
               A community-driven platform where MinSU students share items they no longer need with those who need them most.
             </p>
@@ -271,7 +270,7 @@ export function LandingPage() {
                 <Button
                   className="w-full text-sm"
                   variant={item.user?.id === user?.id ? "outline" : "default"}
-                  onClick={() => handleRequestItem(item.id)}
+                  onClick={() => handleRequestItem(item.encrypted_id)}
                 >
                   {item.user?.id === user?.id ? "View Item" : "Request Item"}
                 </Button>

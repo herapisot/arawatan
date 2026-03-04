@@ -9,7 +9,7 @@ use Laravel\Sanctum\HasApiTokens;
 
 class User extends Authenticatable
 {
-    use HasFactory, Notifiable, HasApiTokens;
+    use HasFactory, Notifiable, HasApiTokens, \App\Traits\HasEncryptedId;
 
     protected $fillable = [
         'first_name',
@@ -43,7 +43,7 @@ class User extends Authenticatable
         ];
     }
 
-    protected $appends = ['full_name', 'items_shared', 'items_received'];
+    protected $appends = ['full_name', 'items_shared', 'items_received', 'encrypted_id'];
 
     public function getFullNameAttribute(): string
     {

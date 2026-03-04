@@ -6,10 +6,12 @@ use App\Http\Controllers\Controller;
 use App\Models\ForumPost;
 use App\Models\Notification;
 use App\Models\User;
+use App\Traits\EncryptsRouteIds;
 use Illuminate\Http\Request;
 
 class AdminForumController extends Controller
 {
+    use EncryptsRouteIds;
     /**
      * List forum posts for admin review (with status filter).
      */
@@ -32,8 +34,10 @@ class AdminForumController extends Controller
     /**
      * Approve a forum post. Awards points to donor (+10) and receiver (+5).
      */
-    public function approve(Request $request, ForumPost $forumPost)
+    public function approve(Request $request, string $encryptedId)
     {
+        $forumPost = $this->findByEncryptedId($encryptedId, ForumPost::class);
+        if ($this->isErrorResponse($forumPost)) return $forumPost;
         if ($forumPost->status !== 'pending') {
             return response()->json(['message' => 'This post has already been reviewed.'], 422);
         }
@@ -97,8 +101,10 @@ class AdminForumController extends Controller
     /**
      * Reject a forum post with a reason.
      */
-    public function reject(Request $request, ForumPost $forumPost)
+    public function reject(Request $request, string $encryptedId)
     {
+        $forumPost = $this->findByEncryptedId($encryptedId, ForumPost::class);
+        if ($this->isErrorResponse($forumPost)) return $forumPost;
         if ($forumPost->status !== 'pending') {
             return response()->json(['message' => 'This post has already been reviewed.'], 422);
         }

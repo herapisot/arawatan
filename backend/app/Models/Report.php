@@ -3,9 +3,13 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
+use App\Traits\HasEncryptedId;
 
 class Report extends Model
 {
+    use HasEncryptedId;
+
+    protected $appends = ['encrypted_id'];
     protected $fillable = [
         'item_id',
         'user_id',

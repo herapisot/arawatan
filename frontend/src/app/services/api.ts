@@ -72,50 +72,50 @@ export const itemsApi = {
     per_page?: number;
   }) => api.get('/items', { params }),
 
-  getItem: (id: number | string) => api.get(`/items/${id}`),
+  getItem: (encryptedId: string) => api.get(`/items/${encryptedId}`),
 
   createItem: (formData: FormData) =>
     api.post('/items', formData, {
       headers: { 'Content-Type': 'multipart/form-data' },
     }),
 
-  updateItem: (id: number, data: Record<string, unknown>) =>
-    api.put(`/items/${id}`, data),
+  updateItem: (encryptedId: string, data: Record<string, unknown>) =>
+    api.put(`/items/${encryptedId}`, data),
 
-  deleteItem: (id: number) => api.delete(`/items/${id}`),
+  deleteItem: (encryptedId: string) => api.delete(`/items/${encryptedId}`),
 
   getCustomCategories: () => api.get('/items/custom-categories'),
 
   myItems: () => api.get('/user/items'),
 
-  reportItem: (id: number, reason: string) =>
-    api.post(`/items/${id}/report`, { reason }),
+  reportItem: (encryptedId: string, reason: string) =>
+    api.post(`/items/${encryptedId}/report`, { reason }),
 };
 
 // ==================== Transactions ====================
 export const transactionsApi = {
-  requestItem: (itemId: number) =>
-    api.post(`/items/${itemId}/request`),
+  requestItem: (encryptedItemId: string) =>
+    api.post(`/items/${encryptedItemId}/request`),
 
-  getTransaction: (id: number) =>
-    api.get(`/transactions/${id}`),
+  getTransaction: (encryptedId: string) =>
+    api.get(`/transactions/${encryptedId}`),
 
-  approve: (id: number) =>
-    api.put(`/transactions/${id}/approve`),
+  approve: (encryptedId: string) =>
+    api.put(`/transactions/${encryptedId}/approve`),
 
-  startMeeting: (id: number) =>
-    api.put(`/transactions/${id}/meeting`),
+  startMeeting: (encryptedId: string) =>
+    api.put(`/transactions/${encryptedId}/meeting`),
 
-  complete: (id: number) =>
-    api.put(`/transactions/${id}/complete`),
+  complete: (encryptedId: string) =>
+    api.put(`/transactions/${encryptedId}/complete`),
 
-  uploadProof: (id: number, formData: FormData) =>
-    api.post(`/transactions/${id}/proof`, formData, {
+  uploadProof: (encryptedId: string, formData: FormData) =>
+    api.post(`/transactions/${encryptedId}/proof`, formData, {
       headers: { 'Content-Type': 'multipart/form-data' },
     }),
 
-  cancel: (id: number) =>
-    api.put(`/transactions/${id}/cancel`),
+  cancel: (encryptedId: string) =>
+    api.put(`/transactions/${encryptedId}/cancel`),
 
   myRequests: () => api.get('/user/requests'),
 
@@ -136,20 +136,20 @@ export const verificationApi = {
 export const chatApi = {
   getConversations: () => api.get('/conversations'),
 
-  getMessages: (conversationId: number, page?: number) =>
-    api.get(`/conversations/${conversationId}/messages`, { params: { page } }),
+  getMessages: (encryptedConversationId: string, page?: number) =>
+    api.get(`/conversations/${encryptedConversationId}/messages`, { params: { page } }),
 
-  sendMessage: (conversationId: number, data: FormData | { text: string }) => {
+  sendMessage: (encryptedConversationId: string, data: FormData | { text: string }) => {
     if (data instanceof FormData) {
-      return api.post(`/conversations/${conversationId}/messages`, data, {
+      return api.post(`/conversations/${encryptedConversationId}/messages`, data, {
         headers: { 'Content-Type': 'multipart/form-data' },
       });
     }
-    return api.post(`/conversations/${conversationId}/messages`, data);
+    return api.post(`/conversations/${encryptedConversationId}/messages`, data);
   },
 
-  startConversation: (itemId: number, recipientId: number) =>
-    api.post('/conversations/start', { item_id: itemId, recipient_id: recipientId }),
+  startConversation: (encryptedItemId: string, encryptedRecipientId: string) =>
+    api.post('/conversations/start', { item_id: encryptedItemId, recipient_id: encryptedRecipientId }),
 };
 
 // ==================== Forum ====================
@@ -164,8 +164,8 @@ export const forumApi = {
       headers: { 'Content-Type': 'multipart/form-data' },
     }),
 
-  toggleLike: (postId: number) =>
-    api.post(`/forum/${postId}/like`),
+  toggleLike: (encryptedPostId: string) =>
+    api.post(`/forum/${encryptedPostId}/like`),
 };
 
 // ==================== Leaderboard ====================
@@ -183,8 +183,8 @@ export const profileApi = {
       headers: { 'Content-Type': 'multipart/form-data' },
     }),
 
-  getPublicProfile: (userId: number) =>
-    api.get(`/users/${userId}`),
+  getPublicProfile: (encryptedUserId: string) =>
+    api.get(`/users/${encryptedUserId}`),
 };
 
 // ==================== Notifications ====================
@@ -195,8 +195,8 @@ export const notificationApi = {
   getUnreadCount: () =>
     api.get('/notifications/unread-count'),
 
-  markAsRead: (id: number) =>
-    api.put(`/notifications/${id}/read`),
+  markAsRead: (encryptedId: string) =>
+    api.put(`/notifications/${encryptedId}/read`),
 
   markAllAsRead: () =>
     api.put('/notifications/read-all'),
@@ -209,30 +209,30 @@ export const adminApi = {
   getVerifications: (status?: string) =>
     api.get('/admin/verifications', { params: { status } }),
 
-  approveVerification: (id: number) =>
-    api.post(`/admin/verifications/${id}/approve`),
+  approveVerification: (encryptedId: string) =>
+    api.post(`/admin/verifications/${encryptedId}/approve`),
 
-  rejectVerification: (id: number, reason: string) =>
-    api.post(`/admin/verifications/${id}/reject`, { rejection_reason: reason }),
+  rejectVerification: (encryptedId: string, reason: string) =>
+    api.post(`/admin/verifications/${encryptedId}/reject`, { rejection_reason: reason }),
 
   getModeration: (params?: { status?: string; severity?: string }) =>
     api.get('/admin/moderation', { params }),
 
-  approveFalsePositive: (id: number) =>
-    api.post(`/admin/moderation/${id}/approve`),
+  approveFalsePositive: (encryptedId: string) =>
+    api.post(`/admin/moderation/${encryptedId}/approve`),
 
-  removeItem: (id: number, enforcementAction?: string) =>
-    api.post(`/admin/moderation/${id}/remove`, { enforcement_action: enforcementAction }),
+  removeItem: (encryptedId: string, enforcementAction?: string) =>
+    api.post(`/admin/moderation/${encryptedId}/remove`, { enforcement_action: enforcementAction }),
 
   // Forum Approval
   getForumPosts: (status?: string) =>
     api.get('/admin/forum', { params: { status } }),
 
-  approveForumPost: (id: number) =>
-    api.post(`/admin/forum/${id}/approve`),
+  approveForumPost: (encryptedId: string) =>
+    api.post(`/admin/forum/${encryptedId}/approve`),
 
-  rejectForumPost: (id: number, reason: string) =>
-    api.post(`/admin/forum/${id}/reject`, { reason }),
+  rejectForumPost: (encryptedId: string, reason: string) =>
+    api.post(`/admin/forum/${encryptedId}/reject`, { reason }),
 };
 
 export default api;

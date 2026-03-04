@@ -41,22 +41,22 @@ export function UserVerificationPanel() {
     load();
   }, [activeTab]);
 
-  const handleApprove = async (id: number) => {
+  const handleApprove = async (encryptedId: string) => {
     try {
-      await adminApi.approveVerification(id);
-      setVerifications(prev => prev.filter(v => v.id !== id));
+      await adminApi.approveVerification(encryptedId);
+      setVerifications(prev => prev.filter(v => v.encrypted_id !== encryptedId));
     } catch (err) {
       console.error('Failed to approve verification:', err);
       sileo.error({ title: "Error", description: "Failed to approve verification." });
     }
   };
 
-  const handleReject = async (id: number) => {
+  const handleReject = async (encryptedId: string) => {
     const reason = prompt('Rejection reason:');
     if (!reason) return;
     try {
-      await adminApi.rejectVerification(id, reason);
-      setVerifications(prev => prev.filter(v => v.id !== id));
+      await adminApi.rejectVerification(encryptedId, reason);
+      setVerifications(prev => prev.filter(v => v.encrypted_id !== encryptedId));
     } catch (err) {
       console.error('Failed to reject verification:', err);
       sileo.error({ title: "Error", description: "Failed to reject verification." });
@@ -224,7 +224,7 @@ export function UserVerificationPanel() {
                     <div className="flex flex-col gap-2">
                       <Button
                         className="w-full"
-                        onClick={() => handleApprove(verification.id)}
+                        onClick={() => handleApprove(verification.encrypted_id)}
                       >
                         <CheckCircle2 className="mr-2 h-4 w-4" />
                         Approve Verification
@@ -232,7 +232,7 @@ export function UserVerificationPanel() {
                       <Button
                         variant="destructive"
                         className="w-full"
-                        onClick={() => handleReject(verification.id)}
+                        onClick={() => handleReject(verification.encrypted_id)}
                       >
                         <XCircle className="mr-2 h-4 w-4" />
                         Reject

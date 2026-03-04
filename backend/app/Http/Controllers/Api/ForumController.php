@@ -4,11 +4,13 @@ namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
 use App\Models\ForumPost;
+use App\Traits\EncryptsRouteIds;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
 
 class ForumController extends Controller
 {
+    use EncryptsRouteIds;
     /**
      * List public forum posts.
      * - Approved posts are visible to everyone.
@@ -111,8 +113,10 @@ class ForumController extends Controller
     /**
      * Like/unlike a forum post (only approved posts can be liked).
      */
-    public function toggleLike(Request $request, ForumPost $forumPost)
+    public function toggleLike(Request $request, string $encryptedId)
     {
+        $forumPost = $this->findByEncryptedId($encryptedId, ForumPost::class);
+        if ($this->isErrorResponse($forumPost)) return $forumPost;
         if ($forumPost->status !== 'approved') {
             return response()->json(['message' => 'You can only like approved posts.'], 422);
         }

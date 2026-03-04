@@ -7,16 +7,21 @@ use App\Models\Transaction;
 use App\Models\Item;
 use App\Models\Conversation;
 use App\Models\Notification;
+use App\Traits\EncryptsRouteIds;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
 
 class TransactionController extends Controller
 {
+    use EncryptsRouteIds;
     /**
      * Request an item (create transaction).
      */
-    public function requestItem(Request $request, Item $item)
+    public function requestItem(Request $request, string $encryptedId)
     {
+        $item = $this->findByEncryptedId($encryptedId, Item::class);
+        if ($this->isErrorResponse($item)) return $item;
+
         $user = $request->user();
 
         // Can't request your own item
@@ -57,7 +62,7 @@ class TransactionController extends Controller
             'item_request',
             'New Item Request',
             $user->full_name . ' has requested your item "' . $item->title . '".',
-            '/browseitem/' . $item->id,
+            '/browseitem/' . $item->encrypted_id,
             $transaction->id,
             'transaction'
         );
@@ -71,8 +76,10 @@ class TransactionController extends Controller
     /**
      * Get transaction detail.
      */
-    public function show(Request $request, Transaction $transaction)
+    public function show(Request $request, string $encryptedId)
     {
+        $transaction = $this->findByEncryptedId($encryptedId, Transaction::class);
+        if ($this->isErrorResponse($transaction)) return $transaction;
         $user = $request->user();
 
         // Only participants or admin can view
@@ -90,8 +97,10 @@ class TransactionController extends Controller
     /**
      * Donor approves a request.
      */
-    public function approve(Request $request, Transaction $transaction)
+    public function approve(Request $request, string $encryptedId)
     {
+        $transaction = $this->findByEncryptedId($encryptedId, Transaction::class);
+        if ($this->isErrorResponse($transaction)) return $transaction;
         if ($transaction->donor_id !== $request->user()->id) {
             return response()->json(['message' => 'Only the donor can approve.'], 403);
         }
@@ -111,7 +120,7 @@ class TransactionController extends Controller
             'request_approved',
             'Request Approved',
             'Your request for "' . $transaction->item->title . '" has been approved!',
-            '/browseitem/' . $transaction->item_id,
+            '/browseitem/' . $transaction->item->encrypted_id,
             $transaction->id,
             'transaction'
         );
@@ -122,8 +131,11 @@ class TransactionController extends Controller
     /**
      * Move transaction to meeting stage.
      */
-    public function startMeeting(Request $request, Transaction $transaction)
+    public function startMeeting(Request $request, string $encryptedId)
     {
+        $transaction = $this->findByEncryptedId($encryptedId, Transaction::class);
+        if ($this->isErrorResponse($transaction)) return $transaction;
+
         $user = $request->user();
         if ($transaction->donor_id !== $user->id && $transaction->receiver_id !== $user->id) {
             return response()->json(['message' => 'Unauthorized'], 403);
@@ -142,8 +154,11 @@ class TransactionController extends Controller
      * Complete a transaction (receiver-only).
      * Points are NOT awarded immediately — they are awarded when admin approves the forum post.
      */
-    public function complete(Request $request, Transaction $transaction)
+    public function complete(Request $request, string $encryptedId)
     {
+        $transaction = $this->findByEncryptedId($encryptedId, Transaction::class);
+        if ($this->isErrorResponse($transaction)) return $transaction;
+
         $user = $request->user();
 
         // Only the receiver can mark as completed
@@ -175,7 +190,7 @@ class TransactionController extends Controller
             'transaction_completed',
             'Transaction Completed',
             'The transaction for "' . $transaction->item->title . '" has been completed by the receiver.',
-            '/browseitem/' . $transaction->item_id,
+            '/browseitem/' . $transaction->item->encrypted_id,
             $transaction->id,
             'transaction'
         );
@@ -208,8 +223,11 @@ class TransactionController extends Controller
     /**
      * Upload proof photo for a transaction.
      */
-    public function uploadProof(Request $request, Transaction $transaction)
+    public function uploadProof(Request $request, string $encryptedId)
     {
+        $transaction = $this->findByEncryptedId($encryptedId, Transaction::class);
+        if ($this->isErrorResponse($transaction)) return $transaction;
+
         $user = $request->user();
         if ($transaction->donor_id !== $user->id && $transaction->receiver_id !== $user->id) {
             return response()->json(['message' => 'Unauthorized'], 403);
@@ -228,8 +246,11 @@ class TransactionController extends Controller
     /**
      * Cancel a transaction.
      */
-    public function cancel(Request $request, Transaction $transaction)
+    public function cancel(Request $request, string $encryptedId)
     {
+        $transaction = $this->findByEncryptedId($encryptedId, Transaction::class);
+        if ($this->isErrorResponse($transaction)) return $transaction;
+
         $user = $request->user();
         if ($transaction->donor_id !== $user->id && $transaction->receiver_id !== $user->id) {
             return response()->json(['message' => 'Unauthorized'], 403);
@@ -251,7 +272,7 @@ class TransactionController extends Controller
             'transaction_cancelled',
             'Transaction Cancelled',
             'The transaction for "' . $transaction->item->title . '" has been cancelled.',
-            '/browseitem/' . $transaction->item_id,
+            '/browseitem/' . $transaction->item->encrypted_id,
             $transaction->id,
             'transaction'
         );

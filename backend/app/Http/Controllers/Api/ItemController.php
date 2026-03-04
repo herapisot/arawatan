@@ -5,11 +5,13 @@ namespace App\Http\Controllers\Api;
 use App\Http\Controllers\Controller;
 use App\Models\Item;
 use App\Models\ItemImage;
+use App\Traits\EncryptsRouteIds;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
 
 class ItemController extends Controller
 {
+    use EncryptsRouteIds;
     /**
      * Browse items with filters.
      */
@@ -72,8 +74,11 @@ class ItemController extends Controller
     /**
      * Get a single item detail.
      */
-    public function show(Item $item)
+    public function show(string $encryptedId)
     {
+        $item = $this->findByEncryptedId($encryptedId, Item::class);
+        if ($this->isErrorResponse($item)) return $item;
+
         // Increment views
         $item->increment('views_count');
 
@@ -156,8 +161,11 @@ class ItemController extends Controller
     /**
      * Update an existing item.
      */
-    public function update(Request $request, Item $item)
+    public function update(Request $request, string $encryptedId)
     {
+        $item = $this->findByEncryptedId($encryptedId, Item::class);
+        if ($this->isErrorResponse($item)) return $item;
+
         // Only owner can update
         if ($item->user_id !== $request->user()->id) {
             return response()->json(['message' => 'Unauthorized'], 403);
@@ -183,8 +191,11 @@ class ItemController extends Controller
     /**
      * Delete an item listing.
      */
-    public function destroy(Request $request, Item $item)
+    public function destroy(Request $request, string $encryptedId)
     {
+        $item = $this->findByEncryptedId($encryptedId, Item::class);
+        if ($this->isErrorResponse($item)) return $item;
+
         if ($item->user_id !== $request->user()->id && !$request->user()->isAdmin()) {
             return response()->json(['message' => 'Unauthorized'], 403);
         }

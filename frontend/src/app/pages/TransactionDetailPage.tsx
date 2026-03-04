@@ -72,7 +72,7 @@ export function TransactionDetailPage() {
         if (existingTx) {
           // Load full transaction detail
           try {
-            const txRes = await transactionsApi.getTransaction(existingTx.id);
+            const txRes = await transactionsApi.getTransaction(existingTx.encrypted_id);
             setTransaction(txRes.data);
             setTransactionStage(txRes.data.status as TransactionStage);
           } catch {
@@ -106,7 +106,7 @@ export function TransactionDetailPage() {
     clearMessages();
     setActionLoading(true);
     try {
-      const res = await transactionsApi.requestItem(Number(itemId));
+      const res = await transactionsApi.requestItem(itemId!);
       setTransaction(res.data);
       setTransactionStage("requested");
       setSuccessMsg("Request sent! The donor will be notified.");
@@ -125,7 +125,7 @@ export function TransactionDetailPage() {
     clearMessages();
     setActionLoading(true);
     try {
-      const res = await transactionsApi.approve(transaction.id);
+      const res = await transactionsApi.approve(transaction.encrypted_id);
       setTransaction(res.data);
       setTransactionStage("approved");
       setSuccessMsg("Request approved! You can now coordinate the meet-up.");
@@ -144,7 +144,7 @@ export function TransactionDetailPage() {
     clearMessages();
     setActionLoading(true);
     try {
-      const res = await transactionsApi.startMeeting(transaction.id);
+      const res = await transactionsApi.startMeeting(transaction.encrypted_id);
       setTransaction(res.data);
       setTransactionStage("meeting");
       setSuccessMsg("Meet-up started! Upload proof after the exchange.");
@@ -163,7 +163,7 @@ export function TransactionDetailPage() {
     clearMessages();
     setActionLoading(true);
     try {
-      const res = await transactionsApi.complete(transaction.id);
+      const res = await transactionsApi.complete(transaction.encrypted_id);
       setTransaction(res.data);
       setTransactionStage("completed");
       setSuccessMsg("Transaction completed! Post a photo to the forum within 12 hours to earn points.");
@@ -185,7 +185,7 @@ export function TransactionDetailPage() {
     try {
       const formData = new FormData();
       formData.append('proof_photo', file);
-      await transactionsApi.uploadProof(transaction.id, formData);
+      await transactionsApi.uploadProof(transaction.encrypted_id, formData);
       setSuccessMsg("Proof photo uploaded successfully!");
       sileo.success({ title: "Uploaded", description: "Proof photo uploaded successfully!" });
     } catch (err: any) {
@@ -203,7 +203,7 @@ export function TransactionDetailPage() {
     clearMessages();
     setActionLoading(true);
     try {
-      const res = await transactionsApi.cancel(transaction.id);
+      const res = await transactionsApi.cancel(transaction.encrypted_id);
       setTransaction(res.data);
       setTransactionStage("cancelled");
       setSuccessMsg("Transaction cancelled. The item is now available again.");
@@ -220,10 +220,10 @@ export function TransactionDetailPage() {
   const handleOpenChat = async () => {
     if (!item) return;
     try {
-      const otherId = isDonor ? transaction?.receiver_id : item.user_id;
+      const otherId = isDonor ? transaction?.receiver?.encrypted_id : item.user?.encrypted_id;
       if (!otherId) return;
-      const res = await chatApi.startConversation(item.id, otherId);
-      navigate(`/chat/${res.data.id}`);
+      const res = await chatApi.startConversation(item.encrypted_id, otherId);
+      navigate(`/chat/${res.data.encrypted_id}`);
     } catch {
       // Fallback: navigate to chat page
       navigate('/chat');

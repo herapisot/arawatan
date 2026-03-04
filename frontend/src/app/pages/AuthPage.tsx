@@ -276,9 +276,6 @@ export function AuthPage() {
                   <Scan className="h-7 w-7" />
                 </div>
                 <h2 className="text-xl font-bold">AI Verifying Your ID</h2>
-                <p className="text-sm text-muted-foreground mt-1">
-                  SheerID-powered verification in progress...
-                </p>
               </div>
 
               <div className="space-y-3 mb-6">
@@ -443,12 +440,6 @@ export function AuthPage() {
                     {loginLoading ? "Logging in..." : "Login"}
                   </Button>
 
-                  <p className="text-center text-xs text-muted-foreground">
-                    Don't have an account?{" "}
-                    <button type="button" onClick={() => setActiveTab("register")} className="text-primary font-semibold hover:underline">
-                      Register here
-                    </button>
-                  </p>
 
                 </form>
               )}
@@ -457,8 +448,7 @@ export function AuthPage() {
               {activeTab === "register" && (
                 <form onSubmit={handleRegister} className="space-y-4">
                   <div className="text-center mb-2">
-                    <h2 className="text-lg font-bold">Create Account</h2>
-                    <p className="text-xs text-muted-foreground">Your ID will be verified by AI (SheerID)</p>
+                    <h1 className="text-lg font-bold">Create Account</h1>
                   </div>
 
                   {regError && (
@@ -508,8 +498,7 @@ export function AuthPage() {
                       <SelectContent>
                         <SelectItem value="main">Main Campus - Victoria</SelectItem>
                         <SelectItem value="bongabong">Bongabong Campus</SelectItem>
-                        <SelectItem value="victoria">Calapan Campus</SelectItem>
-                        <SelectItem value="pinamalayan">Bulalacao Campus</SelectItem>
+                        <SelectItem value="calapan">Calapan Campus</SelectItem>
                       </SelectContent>
                     </Select>
                   </div>
@@ -550,7 +539,7 @@ export function AuthPage() {
                         <>
                           <Upload className="h-6 w-6 mx-auto mb-1 text-muted-foreground" />
                           <p className="text-xs font-medium">Upload your MinSU ID</p>
-                          <p className="text-[10px] text-muted-foreground">JPG, PNG — Max 5MB</p>
+                          <p className="text-[10px] text-muted-foreground">JPG, PNG — Max 1MB</p>
                         </>
                       )}
                       <input type="file" id="id-upload" className="hidden" accept="image/*" onChange={(e) => { if (e.target.files?.[0]) setIdFile(e.target.files[0]); }} />
@@ -569,13 +558,6 @@ export function AuthPage() {
                       <><ArrowRight className="h-4 w-4 mr-2" /> Create Account & Verify ID</>
                     )}
                   </Button>
-
-                  <p className="text-center text-xs text-muted-foreground">
-                    Already have an account?{" "}
-                    <button type="button" onClick={() => setActiveTab("login")} className="text-primary font-semibold hover:underline">
-                      Login here
-                    </button>
-                  </p>
                 </form>
               )}
             </CardContent>

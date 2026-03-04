@@ -51,20 +51,20 @@ export function ItemModerationPanel() {
     }
   };
 
-  const handleApprove = async (id: number) => {
+  const handleApprove = async (encryptedId: string) => {
     try {
-      await adminApi.approveFalsePositive(id);
-      setReports(prev => prev.filter(r => r.id !== id));
+      await adminApi.approveFalsePositive(encryptedId);
+      setReports(prev => prev.filter(r => r.encrypted_id !== encryptedId));
     } catch (err) {
       console.error('Failed to approve:', err);
       sileo.error({ title: "Error", description: "Failed to approve item." });
     }
   };
 
-  const handleRemove = async (id: number) => {
+  const handleRemove = async (encryptedId: string) => {
     try {
-      await adminApi.removeItem(id, 'warn');
-      setReports(prev => prev.filter(r => r.id !== id));
+      await adminApi.removeItem(encryptedId, 'warn');
+      setReports(prev => prev.filter(r => r.encrypted_id !== encryptedId));
     } catch (err) {
       console.error('Failed to remove:', err);
       sileo.error({ title: "Error", description: "Failed to remove item." });
@@ -227,7 +227,7 @@ export function ItemModerationPanel() {
                         <Button
                           variant="outline"
                           className="w-full justify-start"
-                          onClick={() => handleApprove(report.id)}
+                          onClick={() => handleApprove(report.encrypted_id)}
                         >
                           <CheckCircle2 className="mr-2 h-4 w-4" />
                           Approve (False Positive)
@@ -235,7 +235,7 @@ export function ItemModerationPanel() {
                         <Button
                           variant="destructive"
                           className="w-full justify-start"
-                          onClick={() => handleRemove(report.id)}
+                          onClick={() => handleRemove(report.encrypted_id)}
                         >
                           <XCircle className="mr-2 h-4 w-4" />
                           Remove Item

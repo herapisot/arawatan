@@ -306,7 +306,7 @@ export function ProfilePage() {
                         <Badge variant={listing.status === "Active" ? "default" : "secondary"}>
                           {listing.status}
                         </Badge>
-                        <Link to={`/browseitem/${listing.id}`}>
+                        <Link to={`/browseitem/${listing.encrypted_id}`}>
                           <Button variant="outline" size="sm">View</Button>
                         </Link>
                       </div>
@@ -359,7 +359,7 @@ export function ProfilePage() {
                             onClick={async () => {
                               setApproveLoadingId(donation.id);
                               try {
-                                await transactionsApi.approve(donation.id);
+                                await transactionsApi.approve(donation.encrypted_id);
                                 setMyDonations((prev) =>
                                   prev.map((d) =>
                                     d.id === donation.id ? { ...d, status: 'approved' } : d
@@ -380,7 +380,7 @@ export function ProfilePage() {
                             )}
                           </Button>
                         )}
-                        <Link to={`/browseitem/${donation.item_id}`}>
+                        <Link to={`/browseitem/${donation.item?.encrypted_id}`}>
                           <Button variant="outline" size="sm">View</Button>
                         </Link>
                       </div>
@@ -423,7 +423,7 @@ export function ProfilePage() {
                         <Badge variant={request.status === "Approved" ? "default" : "secondary"}>
                           {request.status}
                         </Badge>
-                        <Link to={`/browseitem/${request.item_id || request.item?.id}`}>
+                        <Link to={`/browseitem/${request.item?.encrypted_id}`}>
                           <Button variant="outline" size="sm">View</Button>
                         </Link>
                       </div>

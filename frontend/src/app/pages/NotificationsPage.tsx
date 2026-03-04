@@ -17,6 +17,7 @@ import { sileo } from "sileo";
 
 interface NotificationType {
   id: number;
+  encrypted_id: string;
   type: string;
   title: string;
   message: string;
@@ -105,7 +106,7 @@ export function NotificationsPage() {
   const handleClick = async (notif: NotificationType) => {
     if (!notif.read_at) {
       try {
-        await notificationApi.markAsRead(notif.id);
+        await notificationApi.markAsRead(notif.encrypted_id);
         setNotifications((prev) =>
           prev.map((n) =>
             n.id === notif.id ? { ...n, read_at: new Date().toISOString() } : n

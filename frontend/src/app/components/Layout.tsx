@@ -23,6 +23,7 @@ import { sileo } from "sileo";
 
 interface NotificationType {
   id: number;
+  encrypted_id: string;
   type: string;
   title: string;
   message: string;
@@ -131,7 +132,7 @@ export function Layout() {
     // Mark as read
     if (!notif.read_at) {
       try {
-        await notificationApi.markAsRead(notif.id);
+        await notificationApi.markAsRead(notif.encrypted_id);
         setNotifications((prev) =>
           prev.map((n) => (n.id === notif.id ? { ...n, read_at: new Date().toISOString() } : n))
         );
@@ -162,12 +163,13 @@ export function Layout() {
     { name: "Home", path: "/", icon: Home },
     { name: "About", path: "/about", icon: Info },
     { name: "Forum", path: "/forum", icon: ImageIcon },
+    { name: "Login", path: "/auth", icon: User },
   ];
 
   // Full nav items (visible only when authenticated)
   const authNavItems = [
     { name: "Home", path: "/", icon: Home },
-    { name: "BrowseItem", path: "/browseitem", icon: Store },
+    { name: "Browse", path: "/browseitem", icon: Store },
     { name: "Forum", path: "/forum", icon: ImageIcon },
     { name: "Leaderboard", path: "/leaderboard", icon: Trophy },
   ];
@@ -182,7 +184,7 @@ export function Layout() {
 
   const authMobileNavItems = [
     { name: "Home", path: "/", icon: Home },
-    { name: "BrowseItem", path: "/browseitem", icon: Store },
+    { name: "Browse", path: "/browseitem", icon: Store },
     { name: "Chat", path: "/chat", icon: MessageCircle },
     { name: "Forum", path: "/forum", icon: ImageIcon },
   ];
@@ -192,7 +194,9 @@ export function Layout() {
   return (
     <div className="min-h-screen flex flex-col">
       {/* Desktop Header */}
-      <header className="shadow-md sticky top-0 z-50" style={{ background: 'linear-gradient(90deg, color-mix(in srgb, var(--primary) 80%, transparent) 0%, color-mix(in srgb, var(--accent) 75%, transparent) 100%)', backdropFilter: 'blur(10px)' }}>
+      <header className="shadow-md sticky top-0 z-50" style={{ background: 'linear-gradient(135deg, rgba(52,79,31,0.9) 0%, rgba(52,79,31,0.85) 50%, color-mix(in srgb, rgba(52,79,31,0.9) 70%, rgba(244,153,26,0.8)) 80%, color-mix(in srgb, rgba(52,79,31,0.85) 60%, rgba(255,255,255,0.7)) 100%)', backdropFilter: 'blur(5px)' }}>
+              {/* <header className="shadow-md sticky top-0 z-50" style={{ background: 'linear-gradient(135deg, #344f1f 0%, #344f1f 50%, color-mix(in srgb, #344f1f 70%, #f4991a) 80%, color-mix(in srgb, #344f1f 60%, #ffffff) 100%)' }}> */}
+
         <div className="container mx-auto px-4 py-3 text-white">
           {/* Header Layout */}
           <div className="flex items-center justify-between">

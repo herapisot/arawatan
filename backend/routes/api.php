@@ -29,7 +29,7 @@ Route::post('/login', [AuthController::class, 'login']);
 // Public item browsing
 Route::get('/items', [ItemController::class, 'index']);
 Route::get('/items/custom-categories', [ItemController::class, 'customCategories']);
-Route::get('/items/{item}', [ItemController::class, 'show']);
+Route::get('/items/{encryptedId}', [ItemController::class, 'show']);
 
 // Public leaderboard
 Route::get('/leaderboard', [LeaderboardController::class, 'index']);
@@ -47,7 +47,7 @@ Route::middleware('auth:sanctum')->group(function () {
     // Profile
     Route::get('/user/profile', [ProfileController::class, 'show']);
     Route::put('/user/profile', [ProfileController::class, 'update']);
-    Route::get('/users/{user}', [ProfileController::class, 'publicProfile']);
+    Route::get('/users/{encryptedId}', [ProfileController::class, 'publicProfile']);
 
     // Verification
     Route::post('/verification/upload', [VerificationController::class, 'upload']);
@@ -55,54 +55,54 @@ Route::middleware('auth:sanctum')->group(function () {
 
     // Items (authenticated)
     Route::post('/items', [ItemController::class, 'store'])->middleware('verified.user');
-    Route::put('/items/{item}', [ItemController::class, 'update']);
-    Route::delete('/items/{item}', [ItemController::class, 'destroy']);
+    Route::put('/items/{encryptedId}', [ItemController::class, 'update']);
+    Route::delete('/items/{encryptedId}', [ItemController::class, 'destroy']);
     Route::get('/user/items', [ItemController::class, 'myItems']);
 
     // Item requests / transactions
-    Route::post('/items/{item}/request', [TransactionController::class, 'requestItem']);
-    Route::get('/transactions/{transaction}', [TransactionController::class, 'show']);
-    Route::put('/transactions/{transaction}/approve', [TransactionController::class, 'approve']);
-    Route::put('/transactions/{transaction}/meeting', [TransactionController::class, 'startMeeting']);
-    Route::put('/transactions/{transaction}/complete', [TransactionController::class, 'complete']);
-    Route::post('/transactions/{transaction}/proof', [TransactionController::class, 'uploadProof']);
-    Route::put('/transactions/{transaction}/cancel', [TransactionController::class, 'cancel']);
+    Route::post('/items/{encryptedId}/request', [TransactionController::class, 'requestItem']);
+    Route::get('/transactions/{encryptedId}', [TransactionController::class, 'show']);
+    Route::put('/transactions/{encryptedId}/approve', [TransactionController::class, 'approve']);
+    Route::put('/transactions/{encryptedId}/meeting', [TransactionController::class, 'startMeeting']);
+    Route::put('/transactions/{encryptedId}/complete', [TransactionController::class, 'complete']);
+    Route::post('/transactions/{encryptedId}/proof', [TransactionController::class, 'uploadProof']);
+    Route::put('/transactions/{encryptedId}/cancel', [TransactionController::class, 'cancel']);
     Route::get('/user/requests', [TransactionController::class, 'myRequests']);
     Route::get('/user/donations', [TransactionController::class, 'myDonations']);
 
     // Chat
     Route::get('/conversations', [ChatController::class, 'index']);
-    Route::get('/conversations/{conversation}/messages', [ChatController::class, 'messages']);
-    Route::post('/conversations/{conversation}/messages', [ChatController::class, 'sendMessage']);
+    Route::get('/conversations/{encryptedId}/messages', [ChatController::class, 'messages']);
+    Route::post('/conversations/{encryptedId}/messages', [ChatController::class, 'sendMessage']);
     Route::post('/conversations/start', [ChatController::class, 'startConversation']);
 
     // Forum (authenticated)
     Route::get('/forum/mine', [ForumController::class, 'myPosts']);
     Route::post('/forum', [ForumController::class, 'store']);
-    Route::post('/forum/{forumPost}/like', [ForumController::class, 'toggleLike']);
+    Route::post('/forum/{encryptedId}/like', [ForumController::class, 'toggleLike']);
 
     // Reports
-    Route::post('/items/{item}/report', [ReportController::class, 'reportItem']);
+    Route::post('/items/{encryptedId}/report', [ReportController::class, 'reportItem']);
 
     // Notifications
     Route::get('/notifications', [NotificationController::class, 'index']);
     Route::get('/notifications/unread-count', [NotificationController::class, 'unreadCount']);
-    Route::put('/notifications/{notification}/read', [NotificationController::class, 'markAsRead']);
+    Route::put('/notifications/{encryptedId}/read', [NotificationController::class, 'markAsRead']);
     Route::put('/notifications/read-all', [NotificationController::class, 'markAllAsRead']);
 
     // Admin routes
     Route::middleware('admin')->prefix('admin')->group(function () {
         Route::get('/analytics', [AdminDashboardController::class, 'analytics']);
         Route::get('/verifications', [AdminVerificationController::class, 'index']);
-        Route::post('/verifications/{verification}/approve', [AdminVerificationController::class, 'approve']);
-        Route::post('/verifications/{verification}/reject', [AdminVerificationController::class, 'reject']);
+        Route::post('/verifications/{encryptedId}/approve', [AdminVerificationController::class, 'approve']);
+        Route::post('/verifications/{encryptedId}/reject', [AdminVerificationController::class, 'reject']);
         Route::get('/moderation', [AdminModerationController::class, 'index']);
-        Route::post('/moderation/{report}/approve', [AdminModerationController::class, 'approveFalsePositive']);
-        Route::post('/moderation/{report}/remove', [AdminModerationController::class, 'removeItem']);
+        Route::post('/moderation/{encryptedId}/approve', [AdminModerationController::class, 'approveFalsePositive']);
+        Route::post('/moderation/{encryptedId}/remove', [AdminModerationController::class, 'removeItem']);
 
         // Forum approval
         Route::get('/forum', [AdminForumController::class, 'index']);
-        Route::post('/forum/{forumPost}/approve', [AdminForumController::class, 'approve']);
-        Route::post('/forum/{forumPost}/reject', [AdminForumController::class, 'reject']);
+        Route::post('/forum/{encryptedId}/approve', [AdminForumController::class, 'approve']);
+        Route::post('/forum/{encryptedId}/reject', [AdminForumController::class, 'reject']);
     });
 });

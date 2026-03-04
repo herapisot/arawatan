@@ -54,11 +54,11 @@ export function ForumPage() {
     loadForum();
   }, [filter, isAuthenticated]);
 
-  const handleLike = async (postId: number) => {
+  const handleLike = async (encryptedPostId: string) => {
     try {
-      const res = await forumApi.toggleLike(postId);
+      const res = await forumApi.toggleLike(encryptedPostId);
       setForumItems(prev => prev.map(item =>
-        item.id === postId ? { ...item, likes_count: res.data.likes_count, is_liked: res.data.is_liked } : item
+        item.encrypted_id === encryptedPostId ? { ...item, likes_count: res.data.likes_count, is_liked: res.data.is_liked } : item
       ));
     } catch (err) {
       console.error('Failed to toggle like:', err);
@@ -223,7 +223,7 @@ export function ForumPage() {
                 <div className="flex items-center justify-between text-sm text-muted-foreground">
                   <button
                     className="flex items-center gap-1 hover:text-accent transition-colors"
-                    onClick={() => handleLike(item.id)}
+                    onClick={() => handleLike(item.encrypted_id)}
                   >
                     <Heart className={`h-4 w-4 text-accent ${item.is_liked ? 'fill-current' : ''}`} />
                     <span>{item.likes_count || 0} likes</span>

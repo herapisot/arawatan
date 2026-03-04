@@ -3,9 +3,13 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
+use App\Traits\HasEncryptedId;
 
 class Conversation extends Model
 {
+    use HasEncryptedId;
+
+    protected $appends = ['encrypted_id'];
     protected $fillable = [
         'item_id',
         'participant_one_id',

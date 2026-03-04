@@ -20,6 +20,7 @@ import { sileo } from "sileo";
 
 interface ItemData {
   id: number;
+  encrypted_id: string;
   title: string;
   description: string;
   category: string;
@@ -101,13 +102,13 @@ export function BrowseItemPage() {
         {/* Header */}
         <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-8">
           <div>
-            <h1 className="text-3xl font-bold mb-2">Browse Item</h1>
+            <h1 className="text-3xl font-bold mb-2">Browse</h1>
             <p className="text-muted-foreground">Browse items available from the MinSU community</p>
           </div>
           <Link to="/list-item">
             <Button size="lg" className="w-full md:w-auto">
               <Plus className="mr-2 h-5 w-5" />
-              List an Item
+              Donate Now
             </Button>
           </Link>
         </div>
@@ -244,7 +245,7 @@ export function BrowseItemPage() {
               </CardContent>
               
               <CardFooter className="pt-0 pb-4">
-                <Link to={`/browseitem/${item.id}`} className="w-full">
+                <Link to={`/browseitem/${item.encrypted_id}`} className="w-full">
                   <Button className="w-full" variant={item.user?.id === user?.id ? "outline" : "default"}>
                     {item.user?.id === user?.id ? "View Item" : "Request Item"}
                   </Button>

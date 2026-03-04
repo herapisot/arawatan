@@ -7,10 +7,12 @@ use App\Models\Conversation;
 use App\Models\Message;
 use App\Models\User;
 use App\Models\Notification;
+use App\Traits\EncryptsRouteIds;
 use Illuminate\Http\Request;
 
 class ChatController extends Controller
 {
+    use EncryptsRouteIds;
     /**
      * List user's conversations.
      */
@@ -40,8 +42,11 @@ class ChatController extends Controller
     /**
      * Get messages for a conversation.
      */
-    public function messages(Request $request, Conversation $conversation)
+    public function messages(Request $request, string $encryptedId)
     {
+        $conversation = $this->findByEncryptedId($encryptedId, Conversation::class);
+        if ($this->isErrorResponse($conversation)) return $conversation;
+
         $userId = $request->user()->id;
 
         // Verify participant
@@ -60,8 +65,11 @@ class ChatController extends Controller
     /**
      * Send a message. Blocked if conversation is locked.
      */
-    public function sendMessage(Request $request, Conversation $conversation)
+    public function sendMessage(Request $request, string $encryptedId)
     {
+        $conversation = $this->findByEncryptedId($encryptedId, Conversation::class);
+        if ($this->isErrorResponse($conversation)) return $conversation;
+
         $userId = $request->user()->id;
 
         if ($conversation->participant_one_id !== $userId && $conversation->participant_two_id !== $userId) {
@@ -108,7 +116,7 @@ class ChatController extends Controller
             'new_message',
             'New Message',
             $senderName . ': ' . $msgPreview,
-            '/chat/' . $conversation->id,
+            '/chat/' . $conversation->encrypted_id,
             $conversation->id,
             'conversation'
         );
@@ -122,13 +130,27 @@ class ChatController extends Controller
     public function startConversation(Request $request)
     {
         $request->validate([
-            'item_id' => 'required|exists:items,id',
-            'recipient_id' => 'required|exists:users,id',
+            'item_id' => 'required|string',
+            'recipient_id' => 'required|string',
         ]);
 
         $userId = $request->user()->id;
-        $recipientId = $request->recipient_id;
-        $itemId = $request->item_id;
+
+        // Decrypt the encrypted IDs
+        $itemId = $this->decryptId($request->item_id);
+        $recipientId = $this->decryptId($request->recipient_id);
+
+        if ($itemId === null || $recipientId === null) {
+            return response()->json(['message' => 'Invalid or malformed ID.'], 400);
+        }
+
+        // Verify the models exist
+        $item = \App\Models\Item::find($itemId);
+        $recipient = User::find($recipientId);
+
+        if (!$item || !$recipient) {
+            return response()->json(['message' => 'Resource not found.'], 404);
+        }
 
         if ($userId === $recipientId) {
             return response()->json(['message' => 'Cannot start a conversation with yourself.'], 422);

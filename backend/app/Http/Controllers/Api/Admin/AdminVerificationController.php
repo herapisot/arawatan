@@ -4,10 +4,12 @@ namespace App\Http\Controllers\Api\Admin;
 
 use App\Http\Controllers\Controller;
 use App\Models\Verification;
+use App\Traits\EncryptsRouteIds;
 use Illuminate\Http\Request;
 
 class AdminVerificationController extends Controller
 {
+    use EncryptsRouteIds;
     /**
      * List verifications with optional status filter.
      */
@@ -27,8 +29,10 @@ class AdminVerificationController extends Controller
     /**
      * Approve a verification.
      */
-    public function approve(Request $request, Verification $verification)
+    public function approve(Request $request, string $encryptedId)
     {
+        $verification = $this->findByEncryptedId($encryptedId, Verification::class);
+        if ($this->isErrorResponse($verification)) return $verification;
         $verification->update([
             'status' => 'approved',
             'reviewed_by' => $request->user()->id,
@@ -53,8 +57,10 @@ class AdminVerificationController extends Controller
     /**
      * Reject a verification.
      */
-    public function reject(Request $request, Verification $verification)
+    public function reject(Request $request, string $encryptedId)
     {
+        $verification = $this->findByEncryptedId($encryptedId, Verification::class);
+        if ($this->isErrorResponse($verification)) return $verification;
         $request->validate([
             'rejection_reason' => 'required|string|max:500',
         ]);

@@ -4,10 +4,13 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use App\Traits\HasEncryptedId;
 
 class Transaction extends Model
 {
-    use HasFactory;
+    use HasFactory, HasEncryptedId;
+
+    protected $appends = ['encrypted_id'];
 
     protected $fillable = [
         'item_id',

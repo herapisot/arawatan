@@ -4,10 +4,12 @@ namespace App\Http\Controllers\Api\Admin;
 
 use App\Http\Controllers\Controller;
 use App\Models\Report;
+use App\Traits\EncryptsRouteIds;
 use Illuminate\Http\Request;
 
 class AdminModerationController extends Controller
 {
+    use EncryptsRouteIds;
     /**
      * List flagged items/reports.
      */
@@ -31,8 +33,10 @@ class AdminModerationController extends Controller
     /**
      * Mark report as false positive (approve item).
      */
-    public function approveFalsePositive(Request $request, Report $report)
+    public function approveFalsePositive(Request $request, string $encryptedId)
     {
+        $report = $this->findByEncryptedId($encryptedId, Report::class);
+        if ($this->isErrorResponse($report)) return $report;
         $report->update([
             'status' => 'approved_false_positive',
             'reviewed_by' => $request->user()->id,
@@ -53,8 +57,10 @@ class AdminModerationController extends Controller
     /**
      * Remove item and optionally enforce against user.
      */
-    public function removeItem(Request $request, Report $report)
+    public function removeItem(Request $request, string $encryptedId)
     {
+        $report = $this->findByEncryptedId($encryptedId, Report::class);
+        if ($this->isErrorResponse($report)) return $report;
         $request->validate([
             'enforcement_action' => 'nullable|in:warn,suspend,ban',
         ]);

@@ -4,10 +4,12 @@ namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
 use App\Models\Notification;
+use App\Traits\EncryptsRouteIds;
 use Illuminate\Http\Request;
 
 class NotificationController extends Controller
 {
+    use EncryptsRouteIds;
     /**
      * Get user's notifications (latest first).
      */
@@ -42,8 +44,10 @@ class NotificationController extends Controller
     /**
      * Mark a single notification as read.
      */
-    public function markAsRead(Request $request, Notification $notification)
+    public function markAsRead(Request $request, string $encryptedId)
     {
+        $notification = $this->findByEncryptedId($encryptedId, Notification::class);
+        if ($this->isErrorResponse($notification)) return $notification;
         if ($notification->user_id !== $request->user()->id) {
             return response()->json(['message' => 'Unauthorized'], 403);
         }

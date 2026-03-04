@@ -4,9 +4,13 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use App\Traits\HasEncryptedId;
 
 class Notification extends Model
 {
+    use HasEncryptedId;
+
+    protected $appends = ['encrypted_id'];
     protected $fillable = [
         'user_id',
         'type',

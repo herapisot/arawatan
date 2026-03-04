@@ -18,6 +18,7 @@ import { adminApi } from "../../services/api";
 
 interface ForumPostData {
   id: number;
+  encrypted_id: string;
   user_id: number;
   transaction_id: number | null;
   image_path: string;
@@ -76,7 +77,7 @@ export function ForumApprovalPanel() {
   const handleApprove = async (post: ForumPostData) => {
     setActionLoading(post.id);
     try {
-      await adminApi.approveForumPost(post.id);
+      await adminApi.approveForumPost(post.encrypted_id);
       setPosts((prev) =>
         prev.map((p) => (p.id === post.id ? { ...p, status: "approved" } : p))
       );
@@ -98,7 +99,7 @@ export function ForumApprovalPanel() {
     if (!selectedPost || !rejectReason.trim()) return;
     setActionLoading(selectedPost.id);
     try {
-      await adminApi.rejectForumPost(selectedPost.id, rejectReason);
+      await adminApi.rejectForumPost(selectedPost.encrypted_id, rejectReason);
       setPosts((prev) =>
         prev.map((p) =>
           p.id === selectedPost.id

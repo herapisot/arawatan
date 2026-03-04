@@ -6,7 +6,7 @@ interface FooterProps {
 
 export function Footer({ className = "" }: FooterProps) {
   return (
-    <footer className={className} style={{ background: 'linear-gradient(90deg, color-mix(in srgb, var(--primary) 80%, transparent) 0%, color-mix(in srgb, var(--accent) 75%, transparent) 100%)', color: 'var(--primary-foreground)', backdropFilter: 'blur(10px)' }}>
+    <footer className={className} style={{ background: 'linear-gradient(135deg, #344f1f 0%, #344f1f 50%, color-mix(in srgb, #344f1f 70%, #f4991a) 80%, color-mix(in srgb, #344f1f 60%, #ffffff) 100%)', color: 'var(--primary-foreground)' }}>
       <div className="container mx-auto px-4 py-8" style={{ color: 'var(--primary-foreground)' }}>
         <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
           <div>
@@ -36,7 +36,6 @@ export function Footer({ className = "" }: FooterProps) {
               <li>Main Campus - Victoria</li>
               <li>Bongabong Campus</li>
               <li>Calapan City Campus</li>
-              <li>Bulalacao Campus</li>
             </ul>
           </div>
 

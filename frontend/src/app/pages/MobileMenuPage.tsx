@@ -43,6 +43,12 @@ export function MobileMenuPage() {
             <span className="font-medium">Leaderboard</span>
           </Link>
 
+          <Link to="/login" className="flex items-center gap-3 px-4 py-3 bg-white rounded shadow-sm hover:shadow-md">
+            <User className="h-5 w-5 text-primary" />
+            <span className="font-medium">Login</span>
+          </Link>
+
+
           {isAuthenticated && (
             <button onClick={handleLogout} className="flex items-center gap-3 px-4 py-3 bg-white rounded shadow-sm hover:shadow-md w-full text-left text-destructive">
               <LogOut className="h-5 w-5" />

@@ -36,6 +36,7 @@ interface MessageType {
 
 interface ConversationType {
   id: number;
+  encrypted_id: string;
   item_id: number;
   participant_one_id: number;
   participant_two_id: number;
@@ -126,11 +127,11 @@ export function ChatPage() {
 
         // If chatId is provided, auto-select that conversation
         if (chatId) {
-          const conv = convs.find((c: ConversationType) => c.id === Number(chatId));
+          const conv = convs.find((c: ConversationType) => c.encrypted_id === chatId);
           if (conv) {
             setActiveConversation(conv);
             setShowConversationList(false);
-            await loadMessages(conv.id);
+            await loadMessages(conv.encrypted_id);
           }
         }
       } catch (err) {
@@ -149,7 +150,7 @@ export function ChatPage() {
 
     pollingRef.current = setInterval(async () => {
       try {
-        const res = await chatApi.getMessages(activeConversation.id);
+        const res = await chatApi.getMessages(activeConversation.encrypted_id);
         const fetched: MessageType[] = res.data.data || res.data || [];
         // Messages come in descending order from API, reverse for display
         const sorted = [...fetched].reverse();
@@ -184,10 +185,10 @@ export function ChatPage() {
     return () => clearInterval(convPoll);
   }, []);
 
-  const loadMessages = async (conversationId: number) => {
+  const loadMessages = async (encryptedConversationId: string) => {
     setMessagesLoading(true);
     try {
-      const res = await chatApi.getMessages(conversationId);
+      const res = await chatApi.getMessages(encryptedConversationId);
       const fetched: MessageType[] = res.data.data || res.data || [];
       // API returns latest first, we need oldest first for display
       setMessages([...fetched].reverse());
@@ -203,8 +204,8 @@ export function ChatPage() {
   const selectConversation = async (conv: ConversationType) => {
     setActiveConversation(conv);
     setShowConversationList(false);
-    navigate(`/chat/${conv.id}`, { replace: true });
-    await loadMessages(conv.id);
+    navigate(`/chat/${conv.encrypted_id}`, { replace: true });
+    await loadMessages(conv.encrypted_id);
   };
 
   const handleSend = async () => {
@@ -222,7 +223,7 @@ export function ChatPage() {
         data = { text: message.trim() };
       }
 
-      const res = await chatApi.sendMessage(activeConversation.id, data);
+      const res = await chatApi.sendMessage(activeConversation.encrypted_id, data);
       setMessages((prev) => [...prev, res.data]);
       setMessage("");
       setImageFile(null);

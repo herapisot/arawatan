@@ -4,10 +4,13 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use App\Traits\HasEncryptedId;
 
 class Verification extends Model
 {
-    use HasFactory;
+    use HasFactory, HasEncryptedId;
+
+    protected $appends = ['encrypted_id'];
 
     protected $fillable = [
         'user_id',
