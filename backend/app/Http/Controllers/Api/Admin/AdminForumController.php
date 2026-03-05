@@ -59,7 +59,7 @@ class AdminForumController extends Controller
         if ($forumPost->transaction_id) {
             $transaction = $forumPost->transaction;
             if ($transaction && $transaction->status === 'completed') {
-                // Award points to donor (+10)
+                // Award points to donor (+10) — only the giver earns points
                 $donor = $transaction->donor;
                 if ($donor) {
                     $donor->increment('points', 10);
@@ -70,23 +70,6 @@ class AdminForumController extends Controller
                         'points_awarded',
                         'Points Earned!',
                         'You earned 10 points for donating "' . $transaction->item->title . '"!',
-                        '/leaderboard',
-                        $transaction->id,
-                        'transaction'
-                    );
-                }
-
-                // Award points to receiver (+5)
-                $receiver = $transaction->receiver;
-                if ($receiver) {
-                    $receiver->increment('points', 5);
-                    $this->updateTier($receiver);
-
-                    Notification::notify(
-                        $receiver->id,
-                        'points_awarded',
-                        'Points Earned!',
-                        'You earned 5 points for receiving "' . $transaction->item->title . '"!',
                         '/leaderboard',
                         $transaction->id,
                         'transaction'

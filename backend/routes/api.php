@@ -34,7 +34,7 @@ Route::get('/items/{encryptedId}', [ItemController::class, 'show']);
 // Public leaderboard
 Route::get('/leaderboard', [LeaderboardController::class, 'index']);
 
-// Public forum
+// Public forum (optional auth to detect liked status)
 Route::get('/forum', [ForumController::class, 'index']);
 
 // Authenticated routes
@@ -75,6 +75,7 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/conversations/{encryptedId}/messages', [ChatController::class, 'messages']);
     Route::post('/conversations/{encryptedId}/messages', [ChatController::class, 'sendMessage']);
     Route::post('/conversations/start', [ChatController::class, 'startConversation']);
+    Route::put('/conversations/{encryptedId}/complete-transaction', [ChatController::class, 'completeTransaction']);
 
     // Forum (authenticated)
     Route::get('/forum/mine', [ForumController::class, 'myPosts']);

@@ -4,7 +4,9 @@ namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
 use App\Models\User;
+use App\Models\Transaction;
 use Illuminate\Http\Request;
+use Laravel\Sanctum\PersonalAccessToken;
 
 class LeaderboardController extends Controller
 {
@@ -27,19 +29,14 @@ class LeaderboardController extends Controller
      */
     public function index(Request $request)
     {
-        $period = $request->get('period', 'all-time');
-
-        $query = User::select('id', 'first_name', 'last_name', 'campus', 'tier', 'points', 'avatar_url', 'anonymous_alias')
-            ->where('role', 'user')
+        $users = User::where('role', 'user')
             ->where('points', '>', 0)
-            ->orderBy('points', 'desc');
+            ->orderBy('points', 'desc')
+            ->limit(100)
+            ->get();
 
-        $users = $query->limit(100)->get();
-
-        // Add rank and anonymize names
-        $users = $users->map(function ($user, $index) {
-            $user->rank = $index + 1;
-
+        // Add rank, items_shared count, and anonymize names
+        $leaderboard = $users->map(function ($user, $index) {
             // Assign anonymous alias if not yet set
             if (!$user->anonymous_alias) {
                 $alias = self::ANIMAL_ALIASES[$user->id % count(self::ANIMAL_ALIASES)] . ' #' . $user->id;
@@ -47,22 +44,42 @@ class LeaderboardController extends Controller
                 $user->anonymous_alias = $alias;
             }
 
-            // Replace real name with anonymous alias for display
-            $user->display_name = $user->anonymous_alias;
-            $user->makeHidden(['first_name', 'last_name']);
-
-            return $user;
+            return [
+                'rank' => $index + 1,
+                'display_name' => $user->anonymous_alias,
+                'tier' => $user->tier,
+                'points' => $user->points,
+                'items_shared' => $user->items_shared,
+                'campus' => $user->campus,
+            ];
         });
 
-        // Get current user's rank
+        // Get current user's rank (resolve from token on public route)
+        $authUser = $request->user() ?? $this->resolveUserFromToken($request);
         $currentUserRank = null;
-        if ($request->user()) {
-            $currentUserRank = User::where('points', '>', $request->user()->points)->count() + 1;
+        if ($authUser) {
+            $currentUserRank = User::where('role', 'user')
+                ->where('points', '>', $authUser->points)
+                ->count() + 1;
         }
 
         return response()->json([
-            'leaderboard' => $users,
+            'leaderboard' => $leaderboard,
             'current_user_rank' => $currentUserRank,
         ]);
+    }
+
+    /**
+     * Resolve user from Bearer token on public routes.
+     */
+    private function resolveUserFromToken(Request $request)
+    {
+        $token = $request->bearerToken();
+        if (!$token) return null;
+
+        $accessToken = PersonalAccessToken::findToken($token);
+        if (!$accessToken) return null;
+
+        return $accessToken->tokenable;
     }
 }

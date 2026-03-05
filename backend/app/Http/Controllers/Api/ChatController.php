@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Api;
 use App\Http\Controllers\Controller;
 use App\Models\Conversation;
 use App\Models\Message;
+use App\Models\Transaction;
 use App\Models\User;
 use App\Models\Notification;
 use App\Traits\EncryptsRouteIds;
@@ -25,7 +26,7 @@ class ChatController extends Controller
             ->latest('updated_at')
             ->paginate(20);
 
-        // Transform to include "other" participant
+        // Transform to include "other" participant and transaction info
         $conversations->getCollection()->transform(function ($conv) use ($userId) {
             $other = $conv->getOtherParticipant($userId);
             $conv->other_participant = $other;
@@ -33,6 +34,17 @@ class ChatController extends Controller
                 ->where('sender_id', '!=', $userId)
                 ->where('created_at', '>', $conv->updated_at ?? $conv->created_at)
                 ->count();
+
+            // Attach transaction info so the frontend knows if user is receiver
+            $transaction = Transaction::where('item_id', $conv->item_id)
+                ->whereNotIn('status', ['cancelled'])
+                ->first();
+            if ($transaction) {
+                $conv->transaction_status = $transaction->status;
+                $conv->transaction_encrypted_id = $transaction->encrypted_id;
+                $conv->is_receiver = $transaction->receiver_id === $userId;
+            }
+
             return $conv;
         });
 
@@ -180,5 +192,91 @@ class ChatController extends Controller
         $conversation->load(['participantOne', 'participantTwo', 'item.images']);
 
         return response()->json($conversation);
+    }
+
+    /**
+     * Complete a transaction from within the chat (receiver only).
+     */
+    public function completeTransaction(Request $request, string $encryptedId)
+    {
+        $conversation = $this->findByEncryptedId($encryptedId, Conversation::class);
+        if ($this->isErrorResponse($conversation)) return $conversation;
+
+        $userId = $request->user()->id;
+
+        // Verify participant
+        if ($conversation->participant_one_id !== $userId && $conversation->participant_two_id !== $userId) {
+            return response()->json(['message' => 'Unauthorized'], 403);
+        }
+
+        // Find the active transaction for this item
+        $transaction = Transaction::where('item_id', $conversation->item_id)
+            ->whereNotIn('status', ['cancelled', 'completed'])
+            ->first();
+
+        if (!$transaction) {
+            return response()->json(['message' => 'No active transaction found for this conversation.'], 404);
+        }
+
+        // Only the receiver can complete
+        if ($transaction->receiver_id !== $userId) {
+            return response()->json(['message' => 'Only the receiver can complete the transaction.'], 403);
+        }
+
+        if (!in_array($transaction->status, ['approved', 'meeting'])) {
+            return response()->json(['message' => 'Transaction cannot be completed in its current state.'], 422);
+        }
+
+        $forumDeadline = now()->addHours(12);
+
+        $transaction->update([
+            'status' => 'completed',
+            'completed_at' => now(),
+            'forum_deadline_at' => $forumDeadline,
+        ]);
+
+        // Mark item as completed
+        $transaction->item->update(['status' => 'completed']);
+
+        // Lock all conversations related to this item
+        Conversation::where('item_id', $transaction->item_id)->update(['is_locked' => true]);
+
+        // Notify the donor about completion
+        Notification::notify(
+            $transaction->donor_id,
+            'transaction_completed',
+            'Transaction Completed',
+            'The transaction for "' . $transaction->item->title . '" has been completed by the receiver.',
+            '/browseitem/' . $transaction->item->encrypted_id,
+            $transaction->id,
+            'transaction'
+        );
+
+        // Notify receiver about forum post deadline
+        Notification::notify(
+            $transaction->receiver_id,
+            'forum_deadline',
+            'Post to Forum',
+            'Please post a photo of your exchange for "' . $transaction->item->title . '" to the forum within 12 hours to earn points!',
+            '/forum',
+            $transaction->id,
+            'transaction'
+        );
+
+        // Also notify donor about the forum deadline
+        Notification::notify(
+            $transaction->donor_id,
+            'forum_deadline',
+            'Post to Forum',
+            'The exchange for "' . $transaction->item->title . '" is completed! Post a photo to the forum within 12 hours to earn points.',
+            '/forum',
+            $transaction->id,
+            'transaction'
+        );
+
+        return response()->json([
+            'message' => 'Transaction completed successfully.',
+            'transaction' => $transaction->load(['item.images', 'donor', 'receiver']),
+        ]);
     }
 }

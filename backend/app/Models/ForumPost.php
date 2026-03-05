@@ -42,7 +42,7 @@ class ForumPost extends Model
 
     public function likes()
     {
-        return $this->belongsToMany(User::class, 'gallery_likes', 'gallery_post_id', 'user_id')->withTimestamps();
+        return $this->belongsToMany(User::class, 'gallery_likes', 'gallery_post_id', 'user_id');
     }
 
     public function isLikedBy(?User $user): bool

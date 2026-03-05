@@ -12,31 +12,17 @@ class ForumController extends Controller
 {
     use EncryptsRouteIds;
     /**
-     * List public forum posts.
-     * - Approved posts are visible to everyone.
-     * - Pending/rejected posts from transactions the authenticated user was part of
-     *   are also included so both giver and receiver can see them immediately.
+     * List all public forum posts from all users.
+     * Shows every public post regardless of approval status.
      */
     public function index(Request $request)
     {
-        $user = $request->user();
+        // Try to resolve user from Bearer token (public route, no auth middleware)
+        $user = $request->user() ?? $this->resolveUserFromToken($request);
 
         $query = ForumPost::with(['user', 'transaction.item'])
             ->withCount('likes')
-            ->where('visibility', 'public')
-            ->where('status', 'approved');
-
-        if ($user) {
-            $userId = $user->id;
-            // For authenticated users, we also include their own pending/rejected posts
-            // or posts from transactions they are part of, regardless of status.
-            $query->orWhere(function ($q) use ($userId) {
-                $q->whereHas('transaction', function ($tq) use ($userId) {
-                    $tq->where('donor_id', $userId)
-                      ->orWhere('receiver_id', $userId);
-                });
-            });
-        }
+            ->where('visibility', 'public');
 
         $posts = $query->latest()->paginate($request->get('per_page', 12));
 
@@ -46,9 +32,28 @@ class ForumController extends Controller
                 $post->is_liked = $post->likes()->where('user_id', $userId)->exists();
                 return $post;
             });
+        } else {
+            $posts->getCollection()->transform(function ($post) {
+                $post->is_liked = false;
+                return $post;
+            });
         }
 
         return response()->json($posts);
+    }
+
+    /**
+     * Resolve user from Bearer token on public routes.
+     */
+    private function resolveUserFromToken(Request $request)
+    {
+        $token = $request->bearerToken();
+        if (!$token) return null;
+
+        $accessToken = \Laravel\Sanctum\PersonalAccessToken::findToken($token);
+        if (!$accessToken) return null;
+
+        return $accessToken->tokenable;
     }
 
     /**
@@ -117,9 +122,6 @@ class ForumController extends Controller
     {
         $forumPost = $this->findByEncryptedId($encryptedId, ForumPost::class);
         if ($this->isErrorResponse($forumPost)) return $forumPost;
-        if ($forumPost->status !== 'approved') {
-            return response()->json(['message' => 'You can only like approved posts.'], 422);
-        }
 
         $userId = $request->user()->id;
         $isLiked = $forumPost->likes()->where('user_id', $userId)->exists();
