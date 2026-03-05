@@ -43,8 +43,8 @@ export function LeaderboardPage() {
     rank: currentUserRank,
     points: user?.points || 0,
     contributions: user?.items_shared || 0,
-    tier: user?.tier || 'bronze',
-    nextTierPoints: user?.tier === 'gold' ? 2000 : user?.tier === 'silver' ? 1500 : 1000,
+    tier: user?.tier || 'Bronze Contributor',
+    nextTierPoints: (user?.points || 0) >= 500 ? 1000 : (user?.points || 0) >= 100 ? 500 : 100,
   };
 
   const badges = [
@@ -133,7 +133,9 @@ export function LeaderboardPage() {
                 </div>
                 <Progress value={progressToNextTier} className="h-2" />
                 <p className="text-xs text-muted-foreground mt-2">
-                  {currentUser.nextTierPoints - currentUser.points} points to Gold Champion!
+                  {currentUser.nextTierPoints - currentUser.points > 0
+                    ? `${currentUser.nextTierPoints - currentUser.points} points to next tier!`
+                    : "You've reached the highest tier!"}
                 </p>
               </div>
             </CardContent>
@@ -148,6 +150,13 @@ export function LeaderboardPage() {
               </CardTitle>
             </CardHeader>
             <CardContent>
+              {topContributors.length === 0 ? (
+                <div className="flex flex-col items-center justify-center py-12 text-muted-foreground">
+                  <Gift className="h-12 w-12 mb-3 opacity-50" />
+                  <p className="font-medium">No contributors yet</p>
+                  <p className="text-sm mt-1">Be the first to share and earn points!</p>
+                </div>
+              ) : (
               <div className="space-y-3">
                 {topContributors.map((contributor) => (
                   <div
@@ -184,6 +193,7 @@ export function LeaderboardPage() {
                   </div>
                 ))}
               </div>
+              )}
             </CardContent>
           </Card>
         </div>
@@ -208,6 +218,7 @@ export function LeaderboardPage() {
         </div>
 
         {/* Hall of Fame */}
+        {topContributors.length > 0 && (
         <Card className="shadow-md bg-gradient-to-br from-primary/5 to-secondary/5">
           <CardHeader>
             <CardTitle className="text-center text-2xl">
@@ -240,6 +251,7 @@ export function LeaderboardPage() {
             </div>
           </CardContent>
         </Card>
+        )}
       </div>
     </div>
   );

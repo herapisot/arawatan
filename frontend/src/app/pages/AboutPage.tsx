@@ -51,8 +51,8 @@ export function AboutPage() {
   const stats = [
     { value: "2,847", label: "Active Users" },
     { value: "12,534", label: "Items Exchanged" },
-    { value: "4", label: "Campuses Connected" },
-    { value: "98.5%", label: "Success Rate" },
+    { value: "10", label: "Website Visitors" },
+    { value: "$10,000", label: "Funds Generated" },
   ];
 
   const campuses = [
@@ -115,7 +115,7 @@ export function AboutPage() {
         </div>
       </section>
 
-      {/* Features */}
+      {/* Features
       <section className="py-16">
         <div className="container mx-auto px-4">
           <div className="text-center mb-12">
@@ -143,7 +143,7 @@ export function AboutPage() {
             ))}
           </div>
         </div>
-      </section>
+      </section> */}
 
       {/* Campuses */}
       <section className="py-16 bg-muted/30">

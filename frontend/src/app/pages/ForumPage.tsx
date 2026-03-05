@@ -54,15 +54,34 @@ export function ForumPage() {
     loadForum();
   }, [filter, isAuthenticated]);
 
+  const [likingIds, setLikingIds] = useState<Set<string>>(new Set());
+
   const handleLike = async (encryptedPostId: string) => {
+    if (likingIds.has(encryptedPostId)) return; // Prevent double-click
+    setLikingIds(prev => new Set(prev).add(encryptedPostId));
+    
+    // Optimistic update
+    setForumItems(prev => prev.map(item =>
+      item.encrypted_id === encryptedPostId 
+        ? { ...item, is_liked: !item.is_liked, likes_count: item.is_liked ? Math.max(0, (item.likes_count || 0) - 1) : (item.likes_count || 0) + 1 } 
+        : item
+    ));
     try {
       const res = await forumApi.toggleLike(encryptedPostId);
       setForumItems(prev => prev.map(item =>
         item.encrypted_id === encryptedPostId ? { ...item, likes_count: res.data.likes_count, is_liked: res.data.is_liked } : item
       ));
     } catch (err) {
+      // Revert on error
+      setForumItems(prev => prev.map(item =>
+        item.encrypted_id === encryptedPostId 
+          ? { ...item, is_liked: !item.is_liked, likes_count: item.is_liked ? Math.max(0, (item.likes_count || 0) - 1) : (item.likes_count || 0) + 1 } 
+          : item
+      ));
       console.error('Failed to toggle like:', err);
       sileo.error({ title: "Error", description: "Failed to toggle like." });
+    } finally {
+      setLikingIds(prev => { const next = new Set(prev); next.delete(encryptedPostId); return next; });
     }
   };
 
@@ -128,7 +147,7 @@ export function ForumPage() {
 
         {/* Filter Tabs - only for authenticated users */}
         {isAuthenticated && (
-        <div className="flex gap-2 mb-6">
+        <div className="flex items-center gap-2 mb-6">
           <Button
             variant={filter === "all" ? "default" : "outline"}
             onClick={() => setFilter("all")}
@@ -141,6 +160,15 @@ export function ForumPage() {
           >
             My Posts
           </Button>
+          <div className="ml-auto">
+            <Button asChild>
+              <label className="cursor-pointer">
+                <Upload className="h-4 w-4 mr-2" />
+                POST
+                <input type="file" accept="image/*" className="hidden" onChange={handleFileSelect} />
+              </label>
+            </Button>
+          </div>
         </div>
         )}
 
@@ -164,7 +192,7 @@ export function ForumPage() {
                   className="w-full h-full object-cover"
                 />
                 <div className="absolute top-3 right-3 flex gap-1">
-                  {filter === "my" && item.status && item.status !== "approved" && (
+                  {item.status && item.status !== "approved" && (
                     <Badge
                       variant={item.status === "pending" ? "secondary" : "destructive"}
                       className="bg-card/90 backdrop-blur"
@@ -176,7 +204,7 @@ export function ForumPage() {
                       )}
                     </Badge>
                   )}
-                  {filter === "my" && item.status === "approved" && (
+                  {item.status === "approved" && (
                     <Badge variant="secondary" className="bg-success/90 text-white backdrop-blur">
                       <CheckCircle2 className="h-3 w-3 mr-1" /> Approved
                     </Badge>
@@ -222,11 +250,22 @@ export function ForumPage() {
                 
                 <div className="flex items-center justify-between text-sm text-muted-foreground">
                   <button
-                    className="flex items-center gap-1 hover:text-accent transition-colors"
-                    onClick={() => handleLike(item.encrypted_id)}
+                    className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full transition-all duration-200 ${
+                      item.is_liked 
+                        ? 'bg-red-50 text-red-500 hover:bg-red-100' 
+                        : 'hover:bg-muted hover:text-foreground'
+                    }`}
+                    onClick={() => isAuthenticated ? handleLike(item.encrypted_id) : navigate('/auth')}
                   >
-                    <Heart className={`h-4 w-4 text-accent ${item.is_liked ? 'fill-current' : ''}`} />
-                    <span>{item.likes_count || 0} likes</span>
+                    <Heart 
+                      className="h-4 w-4 transition-all duration-200" 
+                      style={{ 
+                        fill: item.is_liked ? '#ef4444' : 'none', 
+                        color: item.is_liked ? '#ef4444' : 'currentColor',
+                        transform: item.is_liked ? 'scale(1.15)' : 'scale(1)'
+                      }} 
+                    />
+                    <span className="font-medium">{item.likes_count || 0}</span>
                   </button>
                   <span>{new Date(item.created_at).toLocaleDateString()}</span>
                 </div>
@@ -300,7 +339,7 @@ export function ForumPage() {
                 {uploading ? (
                   <><Loader2 className="h-4 w-4 mr-2 animate-spin" /> Uploading...</>
                 ) : (
-                  <><Upload className="h-4 w-4 mr-2" /> Post</>
+                  <><Upload className="h-4 w-4 mr-2" />Post</>
                 )}
               </Button>
             </DialogFooter>

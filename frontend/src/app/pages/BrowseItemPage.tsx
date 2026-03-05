@@ -108,7 +108,7 @@ export function BrowseItemPage() {
           <Link to="/list-item">
             <Button size="lg" className="w-full md:w-auto">
               <Plus className="mr-2 h-5 w-5" />
-              Donate Now
+              Donate Items
             </Button>
           </Link>
         </div>

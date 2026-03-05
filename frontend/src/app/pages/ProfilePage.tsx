@@ -22,7 +22,8 @@ import {
   Inbox,
   CheckCircle2,
   Clock,
-  XCircle
+  XCircle,
+  Image as ImageIcon
 } from "lucide-react";
 import { profileApi, itemsApi, transactionsApi } from "../services/api";
 import { useAuth } from "../contexts/AuthContext";
@@ -207,15 +208,15 @@ export function ProfilePage() {
               </div>
 
               {/* Actions */}
-              <div className="flex md:flex-col gap-2">
-                <Button variant="outline" className="flex-1 md:flex-initial">
+              <div className="flex flex-col gap-2 w-full md:w-auto">
+                <Button variant="outline" className="w-full">
                   <Settings className="mr-2 h-4 w-4" />
                   Edit Profile
                 </Button>
-                <Link to="/list-item" className="flex-1 md:flex-initial">
+                <Link to="/list-item" className="w-full">
                   <Button className="w-full">
                     <Gift className="mr-2 h-4 w-4" />
-                    List Item
+                    Donate Now
                   </Button>
                 </Link>
               </div>

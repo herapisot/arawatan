@@ -150,6 +150,9 @@ export const chatApi = {
 
   startConversation: (encryptedItemId: string, encryptedRecipientId: string) =>
     api.post('/conversations/start', { item_id: encryptedItemId, recipient_id: encryptedRecipientId }),
+
+  completeTransaction: (encryptedConversationId: string) =>
+    api.put(`/conversations/${encryptedConversationId}/complete-transaction`),
 };
 
 // ==================== Forum ====================

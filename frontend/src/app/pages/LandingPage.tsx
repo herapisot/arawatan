@@ -105,8 +105,8 @@ export function LandingPage() {
 
   return (
     <div className="pb-20 md:pb-0 bg-background">
-      {/* Hero Section with HAPAG Banner */}
-      <section className="relative min-h-[100dvh] flex flex-col justify-center px-4 overflow-hidden text-white">
+      {/* Hero Section - ARAWATAN Welcome */}
+      <section className="relative flex flex-col justify-center px-4 overflow-hidden text-white pb-32 md:pb-40">
         {/* Background Image with Ken Burns animation */}
         <div className="absolute inset-0 z-0 overflow-hidden">
           <img src={sampleArawatan} alt="" className="w-full h-full object-cover scale-110 animate-[kenburns_25s_ease-in-out_infinite_alternate]" />
@@ -117,16 +117,14 @@ export function LandingPage() {
         </div>
         <div className="container mx-auto max-w-5xl relative z-10 py-12 md:py-16">
           {/* Welcome Text */}
-          <div className="text-center mb-12 md:mb-16">
-            <h1 className="text-4xl sm:text-5xl md:text-7xl font-black mb-4 md:mb-6 tracking-tight" style={{ fontFamily: "'Playfair Display', montserrat", textShadow: '0 4px 20px rgba(0,0,0,0.6), 0 1px 3px rgba(0,0,0,0.4)' }}>Welcome to MinSU<br className="md:hidden" /> ARAWATAN</h1>
-            <p className="text-xl sm:text-2xl md:text-3xl mb-3 md:mb-5 font-bold tracking-wide" style={{ fontFamily: "'Playfair Display', montserrat", color: 'var(--accent)', textShadow: '0 2px 12px rgba(0,0,0,0.5)' }}>Sharing Hope, Building Community</p>
-            <p className="text-base md:text-xl opacity-95 max-w-2xl mx-auto mb-6 md:mb-8 leading-relaxed" style={{ textShadow: '0 1px 6px rgba(0,0,0,0.4)' }}>
-              A community-driven platform where MinSU students share items they no longer need with those who need them most.
-            </p>
+          <div className="text-center">
+            <h1 className="text-4xl sm:text-5xl md:text-5xl font-bold mt-[-30px] mb-4 md:mb-6 tracking-tight" style={{ fontFamily: " montserrat", textShadow: '0 4px 20px rgba(0,0,0,0.6), 0 1px 3px rgba(0,0,0,0.4)' }}>Welcome to MinSU<br className="md:hidden" /> ARAWATAN</h1>
+            <p className="text-xl sm:text-2xl md:text-2xl mb-3 md:mb-5 tracking-wide" style={{ fontFamily: " montserrat", color: 'var(--accent)', textShadow: '0 2px 12px rgba(0,0,0,0.5)' }}><b>A</b>ccessible <b>R</b>esource-sharing <b>A</b>nd <b>W</b>elfare <b>A</b>ssistance</p>
+            <p className="text-xl sm:text-2xl md:text-2xl mb-3 md:mb-5 tracking-wide" style={{ fontFamily: " montserrat", color: 'var(--accent)', textShadow: '0 2px 12px rgba(0,0,0,0.5)' }}><b>T</b>hrough <b>A</b>ltruistic <b>N</b>etworks</p>
             {!isAuthenticated && (
               <Button
                 size="lg"
-                className="bg-white text-primary hover:bg-white/90 font-bold text-base px-8 py-3 rounded-full shadow-lg hover:shadow-xl hover:scale-105 active:scale-95 transition-all duration-200"
+                className="bg-white text-primary hover:bg-white/90 font-bold text-base px-8 py-3 rounded-full shadow-lg hover:shadow-xl hover:scale-105 active:scale-95 transition-all duration-200 mt-4"
                 onClick={() => navigate("/auth")}
               >
                 Get Started
@@ -135,16 +133,35 @@ export function LandingPage() {
             {isAuthenticated && !isVerified && (
               <Button
                 size="lg"
-                className="bg-secondary hover:bg-secondary/90 text-white font-bold text-base px-8 py-3 rounded-full shadow-lg hover:shadow-xl hover:scale-105 active:scale-95 transition-all duration-200"
+                className="bg-secondary hover:bg-secondary/90 text-white font-bold text-base px-8 py-3 rounded-full shadow-lg hover:shadow-xl hover:scale-105 active:scale-95 transition-all duration-200 mt-4"
                 onClick={() => navigate("/auth?tab=register")}
               >
                 Verify Your ID to Unlock Features
               </Button>
             )}
           </div>
+        </div>
+      </section>
 
-          {/* HAPAG Banner Carousel */}
-          <div className="relative w-full max-w-4xl mx-auto rounded-2xl overflow-hidden shadow-2xl border-2 border-white/20">
+      {/* HAPAG Banner — overlapping between hero and content */}
+      <div className="relative z-20 px-4 -mt-28 md:-mt-36 mb-8">
+        <div className="container mx-auto max-w-5xl">
+          <div 
+            className="relative w-full max-w-4xl mx-auto rounded-2xl overflow-hidden border-2 border-white/20"
+            style={{
+              transform: 'translateY(-2px)',
+              boxShadow: '0 8px 30px rgba(52,79,31,0.15), 0 4px 12px rgba(0,0,0,0.08)',
+              transition: 'transform 0.3s ease, box-shadow 0.3s ease',
+            }}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.transform = 'translateY(-7px)';
+              e.currentTarget.style.boxShadow = '0 16px 40px rgba(52,79,31,0.2), 0 8px 20px rgba(0,0,0,0.1)';
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.transform = 'translateY(-2px)';
+              e.currentTarget.style.boxShadow = '0 8px 30px rgba(52,79,31,0.15), 0 4px 12px rgba(0,0,0,0.08)';
+            }}
+          >
             <div className="relative h-56 md:h-72">
               {slides.map((slide, index) => (
                 <div
@@ -178,6 +195,7 @@ export function LandingPage() {
                 </div>
               ))}
             </div>
+            
 
             {/* Navigation Buttons */}
             <button
@@ -207,7 +225,11 @@ export function LandingPage() {
             </div>
           </div>
         </div>
-      </section>
+      </div>
+
+      {/* <div><marquee style={{ color: 'var(--accent)' }}>hehe</marquee>
+      
+        </div> */}
 
       {/* Items Grid Section */}
       <section className="container mx-auto px-4 py-6 md:py-8">

@@ -194,8 +194,8 @@ export function Layout() {
   return (
     <div className="min-h-screen flex flex-col">
       {/* Desktop Header */}
-      <header className="shadow-md sticky top-0 z-50" style={{ background: 'linear-gradient(135deg, rgba(52,79,31,0.9) 0%, rgba(52,79,31,0.85) 50%, color-mix(in srgb, rgba(52,79,31,0.9) 70%, rgba(244,153,26,0.8)) 80%, color-mix(in srgb, rgba(52,79,31,0.85) 60%, rgba(255,255,255,0.7)) 100%)', backdropFilter: 'blur(5px)' }}>
-              {/* <header className="shadow-md sticky top-0 z-50" style={{ background: 'linear-gradient(135deg, #344f1f 0%, #344f1f 50%, color-mix(in srgb, #344f1f 70%, #f4991a) 80%, color-mix(in srgb, #344f1f 60%, #ffffff) 100%)' }}> */}
+      {/* <header className="shadow-md sticky top-0 z-50" style={{ background: 'linear-gradient(135deg, rgba(52,79,31,0.9) 0%, rgba(52,79,31,0.85) 50%, color-mix(in srgb, rgba(52,79,31,0.9) 70%, rgba(244,153,26,0.8)) 80%, color-mix(in srgb, rgba(52,79,31,0.85) 60%, rgba(255,255,255,0.7)) 100%)', backdropFilter: 'blur(5px)' }}> */}
+              <header className="shadow-md sticky top-0 z-50" style={{ background: 'linear-gradient(135deg, #344f1f 0%, #344f1f 50%, color-mix(in srgb, #344f1f 70%, #f4991a) 80%, color-mix(in srgb, #344f1f 60%, #ffffff) 100%)' }}>
 
         <div className="container mx-auto px-4 py-3 text-white">
           {/* Header Layout */}

@@ -7,6 +7,12 @@ import { Input } from "../components/ui/input";
 import { Avatar, AvatarFallback } from "../components/ui/avatar";
 import { Badge } from "../components/ui/badge";
 import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "../components/ui/dropdown-menu";
+import {
   Send,
   Image as ImageIcon,
   ShieldCheck,
@@ -16,6 +22,9 @@ import {
   MessageCircle,
   Search,
   Lock,
+  MoreVertical,
+  CheckCircle2,
+  Heart,
 } from "lucide-react";
 import { chatApi } from "../services/api";
 import { useAuth } from "../contexts/AuthContext";
@@ -61,6 +70,9 @@ interface ConversationType {
   };
   unread_count?: number;
   is_locked?: boolean;
+  transaction_status?: string;
+  transaction_encrypted_id?: string;
+  is_receiver?: boolean;
   updated_at: string;
 }
 
@@ -106,6 +118,7 @@ export function ChatPage() {
   const [showConversationList, setShowConversationList] = useState(true);
   const [imageFile, setImageFile] = useState<File | null>(null);
   const [imagePreview, setImagePreview] = useState<string | null>(null);
+  const [completing, setCompleting] = useState(false);
 
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -170,13 +183,20 @@ export function ChatPage() {
     };
   }, [activeConversation?.id]);
 
-  // Also poll conversations for unread counts
+  // Also poll conversations for unread counts and lock status
   useEffect(() => {
     const convPoll = setInterval(async () => {
       try {
         const res = await chatApi.getConversations();
         const convs = res.data.data || res.data || [];
         setConversations(convs);
+
+        // Sync active conversation (e.g., is_locked may have changed)
+        setActiveConversation((prev) => {
+          if (!prev) return prev;
+          const updated = convs.find((c: ConversationType) => c.id === prev.id);
+          return updated ? { ...prev, is_locked: updated.is_locked, transaction_status: updated.transaction_status, is_receiver: updated.is_receiver } : prev;
+        });
       } catch {
         // Silently fail
       }
@@ -267,6 +287,36 @@ export function ChatPage() {
     setImagePreview(null);
   };
 
+  const handleCompleteTransaction = async () => {
+    if (!activeConversation || completing) return;
+
+    const confirmed = window.confirm(
+      "Are you sure you want to mark this transaction as completed? This will lock the conversation."
+    );
+    if (!confirmed) return;
+
+    setCompleting(true);
+    try {
+      await chatApi.completeTransaction(activeConversation.encrypted_id);
+      sileo.success({ title: "Transaction Completed", description: "The transaction has been marked as completed." });
+
+      // Update the active conversation to locked state
+      setActiveConversation((prev) => prev ? { ...prev, is_locked: true, transaction_status: 'completed' } : null);
+
+      // Update conversations list
+      setConversations((prev) =>
+        prev.map((c) =>
+          c.id === activeConversation.id ? { ...c, is_locked: true, transaction_status: 'completed' } : c
+        )
+      );
+    } catch (err: any) {
+      const msg = err?.response?.data?.message || "Failed to complete the transaction.";
+      sileo.error({ title: "Error", description: msg });
+    } finally {
+      setCompleting(false);
+    }
+  };
+
   const filteredConversations = conversations.filter((c) => {
     if (!searchQuery.trim()) return true;
     const q = searchQuery.toLowerCase();
@@ -324,14 +374,14 @@ export function ChatPage() {
               >
                 <Avatar className="h-11 w-11 flex-shrink-0">
                   <AvatarFallback className="bg-primary text-primary-foreground text-sm">
-                    {getInitials(conv.other_participant?.full_name)}
+                    {conv.is_locked ? "A" : getInitials(conv.other_participant?.full_name)}
                   </AvatarFallback>
                 </Avatar>
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center justify-between">
                     <span className="font-semibold text-sm truncate flex items-center gap-1">
-                      {conv.other_participant?.full_name || "Unknown"}
-                      {conv.other_participant?.is_verified && (
+                      {conv.is_locked ? "Anonymous" : (conv.other_participant?.full_name || "Unknown")}
+                      {!conv.is_locked && conv.other_participant?.is_verified && (
                         <ShieldCheck className="h-3.5 w-3.5 text-success flex-shrink-0" />
                       )}
                     </span>
@@ -383,15 +433,15 @@ export function ChatPage() {
         </Button>
         <Avatar className="h-9 w-9 flex-shrink-0">
           <AvatarFallback className="bg-primary text-primary-foreground text-sm">
-            {getInitials(activeConversation?.other_participant?.full_name)}
+            {activeConversation?.is_locked ? "A" : getInitials(activeConversation?.other_participant?.full_name)}
           </AvatarFallback>
         </Avatar>
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-1.5">
             <span className="font-semibold text-sm truncate">
-              {activeConversation?.other_participant?.full_name || "Unknown"}
+              {activeConversation?.is_locked ? "Anonymous" : (activeConversation?.other_participant?.full_name || "Unknown")}
             </span>
-            {activeConversation?.other_participant?.is_verified && (
+            {!activeConversation?.is_locked && activeConversation?.other_participant?.is_verified && (
               <ShieldCheck className="h-3.5 w-3.5 text-success flex-shrink-0" />
             )}
           </div>
@@ -401,6 +451,34 @@ export function ChatPage() {
             </p>
           )}
         </div>
+
+        {/* 3-dot menu for receiver to complete transaction */}
+        {activeConversation?.is_receiver &&
+          !activeConversation?.is_locked &&
+          activeConversation?.transaction_status &&
+          ['approved', 'meeting'].includes(activeConversation.transaction_status) && (
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="ghost" size="icon" className="flex-shrink-0">
+                <MoreVertical className="h-5 w-5" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end">
+              <DropdownMenuItem
+                onClick={handleCompleteTransaction}
+                disabled={completing}
+                className="gap-2"
+              >
+                {completing ? (
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                ) : (
+                  <CheckCircle2 className="h-4 w-4 text-success" />
+                )}
+                Complete Transaction
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+        )}
       </div>
 
       {/* Moderation Notice */}
@@ -412,7 +490,25 @@ export function ChatPage() {
       </div>
 
       {/* Messages Area */}
-      <div className="flex-1 overflow-y-auto p-4 bg-muted/20">
+      <div className={`flex-1 overflow-y-auto p-4 ${activeConversation?.is_locked ? 'bg-muted/50 grayscale-[40%] opacity-70' : 'bg-muted/20'}`}>
+        {activeConversation?.is_locked && (
+          <div className="mb-4 rounded-xl border border-primary/20 bg-primary/5 p-4 text-center space-y-2">
+            <div className="flex items-center justify-center gap-2">
+              <Heart className="h-5 w-5 text-primary" style={{ fill: 'currentColor' }} />
+              <span className="text-sm font-semibold text-primary">Thank you for using the ARAWATAN platform!</span>
+            </div>
+            <p className="text-xs text-muted-foreground">
+              Feel free to share your experience on the{" "}
+              <button
+                onClick={() => navigate("/forum")}
+                className="text-primary font-semibold underline underline-offset-2 hover:text-primary/80 transition-colors"
+              >
+                Community Forum
+              </button>{" "}
+              to express your gratitude to the donor.
+            </p>
+          </div>
+        )}
         {messagesLoading ? (
           <div className="flex items-center justify-center h-full">
             <Loader2 className="h-6 w-6 animate-spin text-primary" />
@@ -448,7 +544,7 @@ export function ChatPage() {
                       {!isMe && (
                         <Avatar className="h-7 w-7 flex-shrink-0 mt-1">
                           <AvatarFallback className="bg-primary text-primary-foreground text-xs">
-                            {getInitials(activeConversation?.other_participant?.full_name)}
+                            {activeConversation?.is_locked ? "A" : getInitials(activeConversation?.other_participant?.full_name)}
                           </AvatarFallback>
                         </Avatar>
                       )}
@@ -505,8 +601,8 @@ export function ChatPage() {
       {activeConversation?.is_locked ? (
         <div className="px-4 py-3 border-t border-border bg-muted/50">
           <div className="flex items-center justify-center gap-2 text-muted-foreground text-sm">
-            <AlertTriangle className="h-4 w-4" />
-            <span>This conversation is locked. The transaction has been completed.</span>
+            <Lock className="h-4 w-4" />
+            <span>This conversation has been closed.</span>
           </div>
         </div>
       ) : (
