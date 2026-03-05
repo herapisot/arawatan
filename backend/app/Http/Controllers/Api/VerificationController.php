@@ -101,34 +101,23 @@ class VerificationController extends Controller
         $detectedId = $analysis['detected_id'];
         $ocrText    = $analysis['raw_text'];
 
-        // ── HARD CHECKS — these must pass or the verification is rejected ──
-
         // 5a. Student/Employee ID number — MUST match exactly
         $idMatched = false;
         if ($detectedId) {
-            // OCR found a student-number-shaped string on the ID
             $confidenceScore += 10;
-
-            // Does the OCR number match this user's registered student_id?
             if (strcasecmp($detectedId, $user->student_id) === 0) {
-                // Exact match
                 $idMatched = true;
                 $confidenceScore += 30;
             } elseif ($this->ocrService->matchesUser($detectedId, $user->id)) {
-                // Matches in DB (normalisation edge-case)
                 $idMatched = true;
                 $confidenceScore += 25;
             } else {
-                // OCR found a number but it doesn't match the user
                 // $reasons[] = "Student ID on the card ({$detectedId}) does not match your input ({$user->student_id}).";
                 $reasons[] = "Student ID on the card does not match your input.";
             }
         } else {
-            // OCR could not detect any student number
             $reasons[] = 'Could not read a student number from the ID image. Upload a clear, well-lit photo.';
         }
-
-        // 5b. Name matching — first name & last name must appear on the ID
         $nameResult = $this->ocrService->matchName($ocrText, $user->first_name, $user->last_name);
         $nameMatched = $nameResult['full_match'];
 
