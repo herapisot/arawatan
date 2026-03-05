@@ -73,8 +73,7 @@ export function Layout() {
       setLoginPassword("");
     } catch (err: unknown) {
       const error = err as { response?: { data?: { message?: string } } };
-      const msg = error.response?.data?.message || "Login failed. Please check your credentials.";
-      setLoginError(msg);
+      const msg = error.response?.data?.message || "Invalid email or password.";
       sileo.error({ title: "Login Failed", description: msg });
     } finally {
       setLoginLoading(false);
@@ -438,11 +437,6 @@ export function Layout() {
                 <X className="h-5 w-5" />
               </button>
             </div>
-            {loginError && (
-              <div className="mb-4 p-3 bg-red-50 border border-red-200 text-red-700 rounded-lg text-sm">
-                {loginError}
-              </div>
-            )}
             <form onSubmit={handleLogin} className="space-y-4">
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">Email</label>

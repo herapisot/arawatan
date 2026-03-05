@@ -43,7 +43,7 @@ class ProfileController extends Controller
         $validated = $request->validate([
             'first_name' => 'sometimes|string|max:255',
             'last_name' => 'sometimes|string|max:255',
-            'campus' => 'sometimes|in:main,bongabong,victoria,pinamalayan',
+            'campus' => 'sometimes|in:main,bongabong,calapan,victoria,pinamalayan',
             'avatar' => 'nullable|image|mimes:jpeg,png,jpg,webp|max:2048',
         ]);
 

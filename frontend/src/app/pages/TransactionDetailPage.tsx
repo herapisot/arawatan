@@ -81,7 +81,6 @@ export function TransactionDetailPage() {
           }
         }
       } catch (err) {
-        setError('Failed to load item');
         sileo.error({ title: "Error", description: "Failed to load item details." });
       } finally {
         setLoading(false);
@@ -109,11 +108,9 @@ export function TransactionDetailPage() {
       const res = await transactionsApi.requestItem(itemId!);
       setTransaction(res.data);
       setTransactionStage("requested");
-      setSuccessMsg("Request sent! The donor will be notified.");
       sileo.success({ title: "Request Sent", description: "The donor will be notified." });
     } catch (err: any) {
       const msg = err.response?.data?.message || 'Failed to send request';
-      setError(msg);
       sileo.error({ title: "Request Failed", description: msg });
     } finally {
       setActionLoading(false);
@@ -128,11 +125,9 @@ export function TransactionDetailPage() {
       const res = await transactionsApi.approve(transaction.encrypted_id);
       setTransaction(res.data);
       setTransactionStage("approved");
-      setSuccessMsg("Request approved! You can now coordinate the meet-up.");
-      sileo.success({ title: "Approved", description: "You can now coordinate the meet-up." });
+      sileo.success({ title: "Approved", description: "Coordinate the meet-up now." });
     } catch (err: any) {
       const msg = err.response?.data?.message || 'Failed to approve';
-      setError(msg);
       sileo.error({ title: "Approval Failed", description: msg });
     } finally {
       setActionLoading(false);
@@ -147,11 +142,9 @@ export function TransactionDetailPage() {
       const res = await transactionsApi.startMeeting(transaction.encrypted_id);
       setTransaction(res.data);
       setTransactionStage("meeting");
-      setSuccessMsg("Meet-up started! Upload proof after the exchange.");
       sileo.success({ title: "Meet-up Started", description: "Upload proof after the exchange." });
     } catch (err: any) {
       const msg = err.response?.data?.message || 'Failed to start meeting';
-      setError(msg);
       sileo.error({ title: "Error", description: msg });
     } finally {
       setActionLoading(false);
@@ -166,11 +159,9 @@ export function TransactionDetailPage() {
       const res = await transactionsApi.complete(transaction.encrypted_id);
       setTransaction(res.data);
       setTransactionStage("completed");
-      setSuccessMsg("Transaction completed! Post a photo to the forum within 12 hours to earn points.");
-      sileo.success({ title: "Completed!", description: "Post a photo to the forum within 12 hours to earn points." });
+      sileo.success({ title: "Completed!", description: "Post a forum photo within 12h to earn points." });
     } catch (err: any) {
       const msg = err.response?.data?.message || 'Failed to complete transaction';
-      setError(msg);
       sileo.error({ title: "Error", description: msg });
     } finally {
       setActionLoading(false);
@@ -186,11 +177,9 @@ export function TransactionDetailPage() {
       const formData = new FormData();
       formData.append('proof_photo', file);
       await transactionsApi.uploadProof(transaction.encrypted_id, formData);
-      setSuccessMsg("Proof photo uploaded successfully!");
-      sileo.success({ title: "Uploaded", description: "Proof photo uploaded successfully!" });
+      sileo.success({ title: "Uploaded", description: "Proof photo uploaded." });
     } catch (err: any) {
       const msg = err.response?.data?.message || 'Failed to upload proof';
-      setError(msg);
       sileo.error({ title: "Upload Failed", description: msg });
     } finally {
       setActionLoading(false);
@@ -206,11 +195,9 @@ export function TransactionDetailPage() {
       const res = await transactionsApi.cancel(transaction.encrypted_id);
       setTransaction(res.data);
       setTransactionStage("cancelled");
-      setSuccessMsg("Transaction cancelled. The item is now available again.");
-      sileo.info({ title: "Cancelled", description: "Transaction cancelled. The item is now available again." });
+      sileo.info({ title: "Cancelled", description: "Item is now available again." });
     } catch (err: any) {
       const msg = err.response?.data?.message || 'Failed to cancel';
-      setError(msg);
       sileo.error({ title: "Error", description: msg });
     } finally {
       setActionLoading(false);
@@ -249,20 +236,6 @@ export function TransactionDetailPage() {
           <ArrowLeft className="mr-2 h-4 w-4" />
           Back to Browse Item
         </Button>
-
-        {/* Messages */}
-        {error && (
-          <Alert variant="destructive" className="mb-4">
-            <XCircle className="h-4 w-4" />
-            <AlertDescription>{error}</AlertDescription>
-          </Alert>
-        )}
-        {successMsg && (
-          <Alert className="mb-4 border-success text-success">
-            <CheckCircle2 className="h-4 w-4" />
-            <AlertDescription>{successMsg}</AlertDescription>
-          </Alert>
-        )}
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           {/* Main Content */}

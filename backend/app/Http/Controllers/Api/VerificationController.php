@@ -66,7 +66,8 @@ class VerificationController extends Controller
         }
 
         // 2. Student/Employee ID format check on profile data
-        if (preg_match('/^\d{4}-\d{4,6}$/', $user->student_id)) {
+        // Accept both standard (YYYY-NNNNNN) and MinSU (MMCYYYY-NNNNN) formats
+        if (preg_match('/^(?:MMC)?\d{4}-\d{4,6}$/i', $user->student_id)) {
             $confidenceScore += 15;
         } else {
             $reasons[] = 'Student/Employee ID format is invalid.';
@@ -100,39 +101,45 @@ class VerificationController extends Controller
         $detectedId = $analysis['detected_id'];
         $ocrText    = $analysis['raw_text'];
 
-        // 5a. Student/Employee ID number match
+        // ── HARD CHECKS — these must pass or the verification is rejected ──
+
+        // 5a. Student/Employee ID number — MUST match exactly
+        $idMatched = false;
         if ($detectedId) {
             // OCR found a student-number-shaped string on the ID
-            $confidenceScore += 15;
+            $confidenceScore += 10;
 
             // Does the OCR number match this user's registered student_id?
-            if ($detectedId === $user->student_id) {
-                // Perfect match — strong evidence the ID belongs to this user
+            if (strcasecmp($detectedId, $user->student_id) === 0) {
+                // Exact match
+                $idMatched = true;
                 $confidenceScore += 30;
             } elseif ($this->ocrService->matchesUser($detectedId, $user->id)) {
                 // Matches in DB (normalisation edge-case)
+                $idMatched = true;
                 $confidenceScore += 25;
             } else {
                 // OCR found a number but it doesn't match the user
-                $reasons[] = "The student number on the ID ($detectedId) does not match your registered number ({$user->student_id}).";
+                // $reasons[] = "Student ID on the card ({$detectedId}) does not match your input ({$user->student_id}).";
+                $reasons[] = "Student ID on the card does not match your input.";
             }
         } else {
             // OCR could not detect any student number
-            $reasons[] = 'Could not read a student number from the ID image. Please upload a clear, well-lit photo.';
+            $reasons[] = 'Could not read a student number from the ID image. Upload a clear, well-lit photo.';
         }
 
         // 5b. Name matching — first name & last name must appear on the ID
         $nameResult = $this->ocrService->matchName($ocrText, $user->first_name, $user->last_name);
+        $nameMatched = $nameResult['full_match'];
 
-        if ($nameResult['full_match']) {
-            // Both first and last name found on the ID
+        if ($nameMatched) {
             $confidenceScore += 15;
         } else {
             if (!$nameResult['first_name_match']) {
-                $reasons[] = "Your first name (\"{$user->first_name}\") was not found on the ID.";
+                $reasons[] = "First name \"{$user->first_name}\" was not found on the ID.";
             }
             if (!$nameResult['last_name_match']) {
-                $reasons[] = "Your last name (\"{$user->last_name}\") was not found on the ID.";
+                $reasons[] = "Last name \"{$user->last_name}\" was not found on the ID.";
             }
         }
 
@@ -140,12 +147,21 @@ class VerificationController extends Controller
         if ($analysis['institution_found']) {
             $confidenceScore += 10;
         } else {
-            $reasons[] = 'The ID does not appear to be from Mindoro State University (MinSU).';
+            $reasons[] = 'The ID does not appear to be from Mindoro State University.';
         }
 
         // 5d. Logo comparison with reference image (bonus)
         if ($analysis['logo_match']) {
             $confidenceScore += 5;
+        }
+
+        // ── HARD FAIL: reject if student ID or name didn't match ──
+        // Even if the score is high, these are non-negotiable.
+        if (!$idMatched) {
+            $confidenceScore = min($confidenceScore, 40); // force below threshold
+        }
+        if (!$nameMatched) {
+            $confidenceScore = min($confidenceScore, 50); // force below threshold
         }
 
         // Cap at 99.9
@@ -178,12 +194,13 @@ class VerificationController extends Controller
         return response()->json([
             'message'       => $isApproved
                 ? 'Your MinSU ID has been verified successfully!'
-                : 'Verification failed. ' . implode(' ', $reasons),
+                : 'Could not verify your MinSU ID. Please try again with a clearer photo.',
             'status'        => $verification->status,
             'ai_confidence' => $confidenceScore,
             'ocr_detected'  => $detectedId,
+            'reasons'       => $isApproved ? [] : $reasons,
             'checks'        => [
-                'id_number_match'    => $detectedId === $user->student_id,
+                'id_number_match'    => $idMatched,
                 'first_name_match'   => $nameResult['first_name_match'] ?? false,
                 'last_name_match'    => $nameResult['last_name_match'] ?? false,
                 'institution_found'  => $analysis['institution_found'] ?? false,

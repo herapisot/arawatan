@@ -46,7 +46,7 @@ class AuthController extends Controller
             'last_name' => 'required|string|max:255',
             'email' => 'required|string|email|max:255|unique:users',
             'student_id' => 'required|string|max:50|unique:users',
-            'campus' => 'required|in:main,bongabong,victoria,pinamalayan',
+            'campus' => 'required|in:main,bongabong,calapan,victoria,pinamalayan',
             'user_type' => 'required|in:student,faculty,staff',
             'password' => 'required|string|min:8|confirmed',
         ]);

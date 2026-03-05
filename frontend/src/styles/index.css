@@ -1,3 +1,8 @@
 @import './fonts.css';
 @import './tailwind.css';
 @import './theme.css';
+
+/* Sileo toast: always above navbar (z-50) */
+[data-sileo-viewport] {
+  z-index: 9999 !important;
+}

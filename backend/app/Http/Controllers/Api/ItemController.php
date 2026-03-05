@@ -100,7 +100,7 @@ class ItemController extends Controller
             'condition' => 'required|in:like-new,excellent,good,fair',
             'quantity' => 'required|integer|min:1|max:99',
             'size' => 'nullable|string|in:XS,S,M,L,XL,XXL,28,29,30,31,32,33,34,36,38,40,42',
-            'campus' => 'required|in:main,bongabong,victoria,pinamalayan',
+            'campus' => 'required|in:main,bongabong,calapan,victoria,pinamalayan',
             'meetup_location' => 'nullable|string|max:255',
             'images' => 'required|array|min:1|max:5',
             'images.*' => 'image|mimes:jpeg,png,jpg,webp|max:5120',
@@ -179,7 +179,7 @@ class ItemController extends Controller
             'condition' => 'sometimes|in:like-new,excellent,good,fair',
             'quantity' => 'sometimes|integer|min:1|max:99',
             'size' => 'nullable|string|in:XS,S,M,L,XL,XXL,28,29,30,31,32,33,34,36,38,40,42',
-            'campus' => 'sometimes|in:main,bongabong,victoria,pinamalayan',
+            'campus' => 'sometimes|in:main,bongabong,calapan,victoria,pinamalayan',
             'meetup_location' => 'sometimes|string|max:255',
         ]);
 

@@ -77,8 +77,7 @@ export function VerificationPage() {
         }
       }, 500);
     } catch (err: any) {
-      const msg = err.response?.data?.message || 'Upload failed';
-      setErrorMsg(msg);
+      const msg = err.response?.data?.message || 'Upload failed. Try again.';
       sileo.error({ title: "Upload Failed", description: msg });
       setVerificationStatus('upload');
       setProgress(0);
@@ -185,13 +184,6 @@ export function VerificationPage() {
             Upload your MinSU ID for AI-powered verification
           </p>
         </div>
-
-        {errorMsg && (
-          <Alert variant="destructive" className="mb-6">
-            <AlertTriangle className="h-4 w-4" />
-            <AlertDescription>{errorMsg}</AlertDescription>
-          </Alert>
-        )}
 
         <Card className="shadow-lg mb-6">
           <CardHeader>

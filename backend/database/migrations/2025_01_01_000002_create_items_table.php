@@ -15,7 +15,7 @@ return new class extends Migration
             $table->text('description');
             $table->enum('category', ['books', 'electronics', 'clothing', 'supplies', 'equipment', 'furniture', 'sports', 'others'])->default('others');
             $table->enum('condition', ['like-new', 'excellent', 'good', 'fair'])->default('good');
-            $table->enum('campus', ['main', 'bongabong', 'victoria', 'pinamalayan'])->default('main');
+            $table->enum('campus', ['main', 'bongabong', 'calapan', 'victoria', 'pinamalayan'])->default('main');
             $table->string('meetup_location')->default('Arawatan Corner');
             $table->enum('status', ['pending_review', 'active', 'reserved', 'completed', 'removed'])->default('pending_review');
             $table->boolean('is_verified')->default(false);
