@@ -35,4 +35,21 @@ return [
         ],
     ],
 
+    /*
+    |--------------------------------------------------------------------------
+    | Tesseract OCR
+    |--------------------------------------------------------------------------
+    |
+    | Path to the Tesseract executable. On Linux servers, install with:
+    |   sudo apt install tesseract-ocr
+    | Then the default path '/usr/bin/tesseract' will work.
+    |
+    | On Windows, install via: winget install UB-Mannheim.TesseractOCR
+    | Default path: C:\Program Files\Tesseract-OCR\tesseract.exe
+    |
+    */
+    'tesseract' => [
+        'path' => env('TESSERACT_PATH', ''),
+    ],
+
 ];

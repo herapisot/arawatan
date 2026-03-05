@@ -6,7 +6,7 @@ import { AuthProvider } from './contexts/AuthContext';
 export default function App() {
   return (
     <AuthProvider>
-      <Toaster position="top-right" theme="light" />
+      <Toaster position="top-right" theme="light" offset={{ top: 70 }} options={{ duration: 4000 }} />
       <RouterProvider router={router} />
     </AuthProvider>
   );

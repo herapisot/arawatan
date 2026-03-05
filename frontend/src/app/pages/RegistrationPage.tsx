@@ -91,14 +91,12 @@ export function RegistrationPage() {
     setError("");
 
     if (formData.password !== formData.confirmPassword) {
-      setError("Passwords do not match.");
-      sileo.error({ title: "Validation Error", description: "Passwords do not match." });
+      sileo.error({ title: "Error", description: "Passwords do not match." });
       return;
     }
 
     if (!idFile) {
-      setError("Please upload your MinSU ID for verification.");
-      sileo.error({ title: "Missing ID", description: "Please upload your MinSU ID for verification." });
+      sileo.error({ title: "Error", description: "Please upload your MinSU ID." });
       return;
     }
 
@@ -148,11 +146,9 @@ export function RegistrationPage() {
       if (error.response?.data?.errors) {
         const firstError = Object.values(error.response.data.errors)[0];
         const msg = Array.isArray(firstError) ? firstError[0] : String(firstError);
-        setError(msg);
-        sileo.error({ title: "Registration Error", description: msg });
+        sileo.error({ title: "Registration Failed", description: msg });
       } else {
         const msg = error.response?.data?.message || "Registration failed. Please try again.";
-        setError(msg);
         sileo.error({ title: "Registration Failed", description: msg });
       }
       setStep("form");
@@ -177,8 +173,7 @@ export function RegistrationPage() {
       navigate("/");
     } catch (err: unknown) {
       const error = err as { response?: { data?: { message?: string } } };
-      const msg = error.response?.data?.message || "Login failed. Please check your credentials.";
-      setLoginError(msg);
+      const msg = error.response?.data?.message || "Invalid email or password.";
       sileo.error({ title: "Login Failed", description: msg });
     } finally {
       setLoginLoading(false);
@@ -259,11 +254,6 @@ export function RegistrationPage() {
               </CardHeader>
               <CardContent>
                 <form onSubmit={handleSubmit} className="space-y-6">
-                  {error && (
-                    <Alert variant="destructive">
-                      <AlertDescription>{error}</AlertDescription>
-                    </Alert>
-                  )}
 
                   {/* Personal Information */}
                   <div className="space-y-4">
@@ -539,11 +529,6 @@ export function RegistrationPage() {
 
               {/* Login Form */}
               <div className="px-6 py-5">
-                {loginError && (
-                  <div className="mb-4 p-3 bg-red-50 border border-red-200 text-red-700 rounded-lg text-sm">
-                    {loginError}
-                  </div>
-                )}
                 <form onSubmit={handleModalLogin} className="space-y-4">
                   <div>
                     <Label className="text-sm font-medium text-gray-700">Email</Label>

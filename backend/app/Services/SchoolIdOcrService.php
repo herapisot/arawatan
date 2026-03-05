@@ -45,6 +45,39 @@ class SchoolIdOcrService
     }
 
     /**
+     * Resolve the Tesseract executable path.
+     *
+     * Priority:
+     * 1. TESSERACT_PATH env / config value
+     * 2. Common OS-specific default paths
+     * 3. null (rely on system PATH)
+     *
+     * Works on both Windows (local dev) and Linux (hosting/server).
+     */
+    protected function resolveTesseractPath(): ?string
+    {
+        // 1. Explicit config / env
+        $configured = config('services.tesseract.path');
+        if (!empty($configured) && file_exists($configured)) {
+            return $configured;
+        }
+
+        // 2. Auto-detect common locations
+        $candidates = PHP_OS_FAMILY === 'Windows'
+            ? ['C:\\Program Files\\Tesseract-OCR\\tesseract.exe']
+            : ['/usr/bin/tesseract', '/usr/local/bin/tesseract'];
+
+        foreach ($candidates as $path) {
+            if (file_exists($path)) {
+                return $path;
+            }
+        }
+
+        // 3. Fall back to system PATH
+        return null;
+    }
+
+    /**
      * Extract all text from an ID image using Tesseract OCR.
      *
      * @param  string  $imagePath  Absolute path to the image file.
@@ -55,9 +88,15 @@ class SchoolIdOcrService
         try {
             $ocr = new TesseractOCR($imagePath);
 
+            // Resolve Tesseract executable path from config, env, or auto-detect
+            $tesseractPath = $this->resolveTesseractPath();
+            if ($tesseractPath) {
+                $ocr->executable($tesseractPath);
+            }
+
             // Configure Tesseract for best ID-card text recognition
             $ocr->lang('eng')          // English language data
-                ->psm(6)               // Assume a single uniform block of text
+                ->psm(3)               // Fully automatic page segmentation (best for ID cards with multiple text zones)
                 ->oem(3);              // Default OCR Engine Mode (LSTM + legacy)
 
             $text = $ocr->run();
@@ -142,6 +181,30 @@ class SchoolIdOcrService
         ];
     }
 
+    // ── Text normalization ─────────────────────────────────────────
+
+    /**
+     * Normalize text by replacing accented/special characters with ASCII equivalents.
+     * Handles common OCR substitutions and diacritical marks.
+     *
+     * @param  string  $text
+     * @return string  Normalized ASCII text.
+     */
+    protected function normalizeText(string $text): string
+    {
+        $replacements = [
+            'ñ' => 'n', 'Ñ' => 'n',
+            'á' => 'a', 'Á' => 'a',
+            'é' => 'e', 'É' => 'e',
+            'í' => 'i', 'Í' => 'i',
+            'ó' => 'o', 'Ó' => 'o',
+            'ú' => 'u', 'Ú' => 'u',
+            'ü' => 'u', 'Ü' => 'u',
+        ];
+
+        return str_replace(array_keys($replacements), array_values($replacements), $text);
+    }
+
     // ── Name matching ──────────────────────────────────────────────
 
     /**
@@ -158,10 +221,39 @@ class SchoolIdOcrService
      */
     public function matchName(string $ocrText, string $firstName, string $lastName): array
     {
-        $ocrLower = mb_strtolower($ocrText);
+        // Normalize both OCR text and user names to strip diacritical marks
+        $ocrNorm = mb_strtolower($this->normalizeText($ocrText));
+        $firstNorm = mb_strtolower(trim($this->normalizeText($firstName)));
+        $lastNorm = mb_strtolower(trim($this->normalizeText($lastName)));
 
-        $firstMatch = $this->fuzzyWordMatch($ocrLower, $firstName);
-        $lastMatch  = $this->fuzzyWordMatch($ocrLower, $lastName);
+        // Forward check: user's input appears in OCR text
+        $firstMatch = $this->exactWordMatch($ocrNorm, $firstNorm);
+        $lastMatch  = $this->exactWordMatch($ocrNorm, $lastNorm);
+
+        // Reverse check: extract the full name from the ID and verify the user
+        // typed ALL parts of it (not just a partial match).
+        // e.g. ID says "MEICAELLA FE J. BUNAG" — user must type "Meicaella Fe", not just "Meicaella"
+        if ($firstMatch && $lastMatch) {
+            $idFirstName = $this->extractFirstNameFromOcr($ocrNorm, $lastNorm);
+            if ($idFirstName !== null) {
+                // Remove single-letter middle initials (like "j", "j.") from the ID name
+                $idNameWords = preg_split('/\s+/', trim($idFirstName));
+                $idNameWords = array_filter($idNameWords, function ($w) {
+                    $clean = rtrim($w, '.');
+                    return mb_strlen($clean) > 1; // keep only real name parts, skip initials
+                });
+                $idFirstCleaned = implode(' ', $idNameWords);
+
+                // User's first name (cleaned) must match the ID's first name exactly
+                if (!empty($idFirstCleaned) && $idFirstCleaned !== $firstNorm) {
+                    $firstMatch = false;
+                    Log::info('Reverse name check failed', [
+                        'id_first_name' => $idFirstCleaned,
+                        'user_first_name' => $firstNorm,
+                    ]);
+                }
+            }
+        }
 
         Log::info('OCR name matching result', [
             'first_name'       => $firstName,
@@ -178,13 +270,45 @@ class SchoolIdOcrService
     }
 
     /**
-     * Fuzzy-match a target word against all words in the OCR text.
+     * Extract the first name portion from the OCR text by finding the line
+     * that contains the last name and returning everything before it.
      *
-     * @param  string  $ocrTextLower  Lowercased OCR text.
+     * @param  string  $ocrNorm  Normalized, lowercased OCR text.
+     * @param  string  $lastNorm Normalized, lowercased last name.
+     * @return string|null  The first name portion, or null if not found.
+     */
+    protected function extractFirstNameFromOcr(string $ocrNorm, string $lastNorm): ?string
+    {
+        // Split OCR text into lines and find the line containing the last name
+        $lines = preg_split('/[\n\r]+/', $ocrNorm);
+
+        foreach ($lines as $line) {
+            $line = trim($line);
+            if (empty($line)) continue;
+
+            // Check if this line contains the last name
+            $pos = mb_strpos($line, $lastNorm);
+            if ($pos !== false) {
+                // Everything before the last name on this line is the first+middle name
+                $before = trim(mb_substr($line, 0, $pos));
+                if (!empty($before)) {
+                    return $before;
+                }
+            }
+        }
+
+        return null;
+    }
+
+    /**
+     * Exact-match a target word against the OCR text (case-insensitive, diacriticals normalized).
+     * No fuzzy/percentage matching — the name must appear exactly letter-by-letter.
+     *
+     * @param  string  $ocrTextLower  Lowercased, normalized OCR text.
      * @param  string  $targetWord    The word to search for.
      * @return bool
      */
-    protected function fuzzyWordMatch(string $ocrTextLower, string $targetWord): bool
+    protected function exactWordMatch(string $ocrTextLower, string $targetWord): bool
     {
         $target = mb_strtolower(trim($targetWord));
 
@@ -192,22 +316,34 @@ class SchoolIdOcrService
             return false;
         }
 
-        // Exact substring match first (fast path)
+        // Exact substring match (letter-by-letter)
         if (str_contains($ocrTextLower, $target)) {
             return true;
         }
 
-        // Fuzzy match: compare each OCR word against the target
-        // This handles minor OCR misreads (e.g. "De1a" → "Dela")
-        $ocrWords = preg_split('/[\s,.\-\/]+/', $ocrTextLower);
-
-        foreach ($ocrWords as $ocrWord) {
-            if (empty($ocrWord)) {
-                continue;
+        // For multi-word targets (e.g. "Meicaella Fe"), check if ALL individual
+        // words appear somewhere in the OCR text
+        $targetWords = preg_split('/\s+/', $target);
+        if (count($targetWords) > 1) {
+            $allWordsFound = true;
+            foreach ($targetWords as $word) {
+                if (empty($word)) continue;
+                if (!$this->exactWordMatch($ocrTextLower, $word)) {
+                    $allWordsFound = false;
+                    break;
+                }
             }
+            if ($allWordsFound) {
+                return true;
+            }
+        }
 
-            similar_text($target, $ocrWord, $percent);
-            if ($percent >= 80.0) {
+        // Also check word-by-word exact match from OCR tokens
+        // (handles cases where OCR splits/joins words differently)
+        $ocrWords = preg_split('/[\s,.\-\/]+/', $ocrTextLower);
+        foreach ($ocrWords as $ocrWord) {
+            if (empty($ocrWord)) continue;
+            if ($target === $ocrWord) {
                 return true;
             }
         }
@@ -244,9 +380,24 @@ class SchoolIdOcrService
             }
         }
 
+        // Check if individual key words appear separately in the OCR text
+        // (handles multiline OCR output where "MINDORO STATE UNIVERSITY" is split)
+        $ocrWords = preg_split('/[\s,.\-\/\n\r]+/', $ocrLower);
+        $hasMinoro  = in_array('mindoro', $ocrWords) || in_array('mindor0', $ocrWords) || in_array('mindord', $ocrWords);
+        $hasState   = in_array('state', $ocrWords) || in_array('stale', $ocrWords) || in_array('stat', $ocrWords);
+        $hasUniv    = false;
+        foreach ($ocrWords as $w) {
+            if (str_starts_with($w, 'univ') && strlen($w) >= 5) {
+                $hasUniv = true;
+                break;
+            }
+        }
+        if ($hasMinoro && $hasState && $hasUniv) {
+            return 'mindoro state university (word match)';
+        }
+
         // Fuzzy check for OCR misreads of "mindoro state university"
         // e.g. "Mindanac State Universily"
-        $ocrWords = preg_split('/\s+/', $ocrLower);
         $ocrJoined = implode(' ', $ocrWords);
 
         foreach (['mindoro state university'] as $phrase) {
@@ -304,11 +455,11 @@ class SchoolIdOcrService
 
             Log::info('Logo comparison result', [
                 'hamming_distance' => $distance,
-                'match'            => $distance <= 18, // Lenient for full ID vs logo crop
+                'match'            => $distance <= 22, // Lenient for full ID vs logo crop
             ]);
 
             // Full ID vs logo will have higher distance; use lenient threshold
-            return $distance <= 18;
+            return $distance <= 22;
         } catch (\Exception $e) {
             Log::warning('Logo comparison failed', ['error' => $e->getMessage()]);
             return false;

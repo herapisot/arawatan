@@ -2,3 +2,7 @@
 # See README.md for details
 # minsu-logo.png
 # id-sample.png
+
+
+# sudo apt update
+# sudo apt install tesseract-ocr -y

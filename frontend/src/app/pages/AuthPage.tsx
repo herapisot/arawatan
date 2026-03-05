@@ -51,7 +51,6 @@ export function AuthPage() {
   const [progress, setProgress] = useState(0);
   const [aiConfidence, setAiConfidence] = useState(0);
   const [rejectionReason, setRejectionReason] = useState("");
-  const [showSuccessBanner, setShowSuccessBanner] = useState(false);
   const [idFile, setIdFile] = useState<File | null>(null);
   const [dragActive, setDragActive] = useState(false);
   const [formData, setFormData] = useState({
@@ -69,7 +68,7 @@ export function AuthPage() {
   // Only redirect on initial mount if already authenticated and verified
   // (not during registration flow)
   useEffect(() => {
-    if (isAuthenticated && isVerified && registerStep === "form" && !showSuccessBanner) {
+    if (isAuthenticated && isVerified && registerStep === "form") {
       navigate("/");
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -85,8 +84,7 @@ export function AuthPage() {
       navigate("/");
     } catch (err: unknown) {
       const error = err as { response?: { data?: { message?: string } } };
-      const msg = error.response?.data?.message || "Login failed. Please check your credentials.";
-      setLoginError(msg);
+      const msg = error.response?.data?.message || "Invalid email or password.";
       sileo.error({ title: "Login Failed", description: msg });
     } finally {
       setLoginLoading(false);
@@ -113,13 +111,11 @@ export function AuthPage() {
     setRegError("");
 
     if (formData.password !== formData.confirmPassword) {
-      setRegError("Passwords do not match.");
-      sileo.error({ title: "Validation Error", description: "Passwords do not match." });
+      sileo.error({ title: "Error", description: "Passwords do not match." });
       return;
     }
     if (!idFile) {
-      setRegError("Please upload your MinSU ID for verification.");
-      sileo.error({ title: "Missing ID", description: "Please upload your MinSU ID for verification." });
+      sileo.error({ title: "Error", description: "Please upload your MinSU ID." });
       return;
     }
 
@@ -157,12 +153,19 @@ export function AuthPage() {
         sileo.success({ title: "Verified!", description: "Your MinSU ID has been verified successfully." });
         // Log out so user re-authenticates cleanly
         await logout();
-        // Show success popup with login link
-        setRegisterStep("verified");
+        // Clear the form and go straight to login tab
+        setFormData({ firstName: "", lastName: "", email: "", studentId: "", campus: "", userType: "", password: "", confirmPassword: "", agreeTerms: false });
+        setIdFile(null);
+        setRegisterStep("form");
+        setActiveTab("login");
       } else {
-        const reason = res.data.message || "Verification failed.";
+        // Build detailed rejection reason from the reasons array
+        const reasons: string[] = res.data.reasons || [];
+        const reason = reasons.length > 0
+          ? reasons.map(r => `• ${r}`).join('\n')
+          : (res.data.message || "Could not verify your MinSU ID.");
         setRejectionReason(reason);
-        sileo.error({ title: "Verification Failed", description: reason });
+        sileo.error({ title: "Verification Failed", description: "Could not verify your MinSU ID." });
         setRegisterStep("rejected");
       }
     } catch (err: unknown) {
@@ -170,11 +173,9 @@ export function AuthPage() {
       if (error.response?.data?.errors) {
         const firstError = Object.values(error.response.data.errors)[0];
         const msg = Array.isArray(firstError) ? firstError[0] : String(firstError);
-        setRegError(msg);
-        sileo.error({ title: "Registration Error", description: msg });
+        sileo.error({ title: "Registration Failed", description: msg });
       } else {
         const msg = error.response?.data?.message || "Registration failed. Please try again.";
-        setRegError(msg);
         sileo.error({ title: "Registration Failed", description: msg });
       }
       setRegisterStep("form");
@@ -182,14 +183,6 @@ export function AuthPage() {
     } finally {
       setRegLoading(false);
     }
-  };
-
-  const handleGoToLogin = () => {
-    setRegisterStep("form");
-    setActiveTab("login");
-    setLoginEmail(formData.email);
-    setLoginPassword("");
-    setShowSuccessBanner(true);
   };
 
   return (
@@ -208,40 +201,6 @@ export function AuthPage() {
           <h1 className="text-2xl font-bold text-white">MinSU ARAWATAN</h1>
           <p className="text-sm text-white/80 mt-1">Community Exchange Platform</p>
         </div>
-
-        {/* ===== VERIFIED SUCCESS ===== */}
-        {registerStep === "verified" && (
-          <Card className="shadow-xl border-0 overflow-hidden">
-            <div className="bg-gradient-to-r from-primary to-accent px-6 py-8 text-center text-white">
-              <div className="inline-flex items-center justify-center w-16 h-16 bg-white/20 rounded-full mb-4">
-                <CheckCircle2 className="h-9 w-9" />
-              </div>
-              <h2 className="text-xl font-bold">Registration Successful!</h2>
-              <p className="text-sm text-primary-foreground/80 mt-2">
-                Your MinSU ID has been verified by our AI system.
-              </p>
-              {aiConfidence > 0 && (
-                <div className="mt-3 inline-flex items-center gap-2 bg-white/15 px-3 py-1.5 rounded-full text-xs font-medium">
-                  <Scan className="h-3.5 w-3.5" />
-                  AI Confidence: {aiConfidence}%
-                </div>
-              )}
-            </div>
-            <CardContent className="p-6 text-center">
-              <p className="text-sm text-gray-600 mb-5">
-                Your account is ready! Click the button below to log in with your new account.
-              </p>
-              <Button
-                className="w-full bg-primary hover:bg-primary/90 text-primary-foreground font-semibold"
-                size="lg"
-                onClick={handleGoToLogin}
-              >
-                <LogIn className="h-4 w-4 mr-2" />
-                Go to Login Form
-              </Button>
-            </CardContent>
-          </Card>
-        )}
 
         {/* ===== VERIFYING (AI Processing) ===== */}
         {registerStep === "verifying" && (
@@ -324,16 +283,19 @@ export function AuthPage() {
                 Our AI system could not verify your MinSU ID.
               </p>
               {rejectionReason && (
-                <Alert variant="destructive" className="text-left mb-5">
-                  <AlertTriangle className="h-4 w-4" />
-                  <AlertDescription className="text-sm">{rejectionReason}</AlertDescription>
-                </Alert>
+                <div className="text-left mb-5 bg-red-50 border border-red-200 rounded-lg p-4">
+                  <div className="flex items-center gap-2 mb-2">
+                    <AlertTriangle className="h-4 w-4 text-red-500" />
+                    <span className="text-sm font-medium text-red-700">Details</span>
+                  </div>
+                  <p className="text-sm text-red-600 whitespace-pre-line">{rejectionReason}</p>
+                </div>
               )}
               <div className="space-y-2">
-                <Button className="w-full" onClick={() => { setRegisterStep("form"); setRegError(""); setIdFile(null); }}>
+                <Button className="w-full" onClick={() => { setRegisterStep("form"); setIdFile(null); }}>
                   Try Again
                 </Button>
-                <Button variant="ghost" className="w-full" onClick={handleGoToLogin}>
+                <Button variant="ghost" className="w-full" onClick={() => { setRegisterStep("form"); setActiveTab("login"); }}>
                   Back to Login
                 </Button>
               </div>
@@ -344,27 +306,6 @@ export function AuthPage() {
         {/* ===== LOGIN / REGISTER TABS ===== */}
         {registerStep === "form" && (
           <Card className="shadow-xl border-0 overflow-hidden">
-            {/* Success Banner — shown after verified registration */}
-            {showSuccessBanner && (
-              <div className="bg-gradient-to-r from-primary to-accent px-5 py-4 text-white">
-                <div className="flex items-center gap-3">
-                  <div className="flex-shrink-0 w-10 h-10 bg-white/20 rounded-full flex items-center justify-center">
-                    <CheckCircle2 className="h-6 w-6" />
-                  </div>
-                  <div>
-                    <p className="font-bold text-sm">Registration Successful!</p>
-                    <p className="text-xs text-primary-foreground/80">Your MinSU ID has been verified. Log in to continue.</p>
-                  </div>
-                  {aiConfidence > 0 && (
-                    <div className="ml-auto flex-shrink-0 bg-white/15 px-2 py-1 rounded-full text-[10px] font-medium flex items-center gap-1">
-                      <Scan className="h-3 w-3" />
-                      {aiConfidence}%
-                    </div>
-                  )}
-                </div>
-              </div>
-            )}
-
             {/* Tab Switcher */}
             <div className="flex border-b">
               <button
@@ -399,12 +340,6 @@ export function AuthPage() {
                     <h2 className="text-lg font-bold">Welcome Back</h2>
                     <p className="text-xs text-muted-foreground">Login with your MinSU account</p>
                   </div>
-
-                  {loginError && (
-                    <Alert variant="destructive">
-                      <AlertDescription className="text-sm">{loginError}</AlertDescription>
-                    </Alert>
-                  )}
 
                   <div>
                     <Label htmlFor="loginEmail">Email</Label>
@@ -450,12 +385,6 @@ export function AuthPage() {
                   <div className="text-center mb-2">
                     <h1 className="text-lg font-bold">Create Account</h1>
                   </div>
-
-                  {regError && (
-                    <Alert variant="destructive">
-                      <AlertDescription className="text-sm">{regError}</AlertDescription>
-                    </Alert>
-                  )}
 
                   <div className="grid grid-cols-2 gap-3">
                     <div>

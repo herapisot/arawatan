@@ -75,16 +75,14 @@ export function ItemListingPage() {
 
       await itemsApi.createItem(data);
       setSuccess(true);
-      sileo.success({ title: "Item Listed!", description: "Your item has been listed successfully. Redirecting..." });
+      sileo.success({ title: "Item Listed!", description: "Redirecting..." });
       setTimeout(() => navigate("/browseitem"), 2000);
     } catch (err: any) {
       if (err.response?.data?.errors) {
         const errors = Object.values(err.response.data.errors).flat().join(', ');
-        setError(errors);
         sileo.error({ title: "Listing Error", description: errors });
       } else {
         const msg = err.response?.data?.message || 'Failed to create listing';
-        setError(msg);
         sileo.error({ title: "Listing Failed", description: msg });
       }
     } finally {
@@ -133,13 +131,6 @@ export function ItemListingPage() {
             </div>
           </CardHeader>
           <CardContent>
-            {error && (
-              <Alert variant="destructive" className="mb-4">
-                <AlertTriangle className="h-4 w-4" />
-                <AlertDescription>{error}</AlertDescription>
-              </Alert>
-            )}
-
             {success && (
               <Alert className="mb-4 border-success text-success">
                 <ShieldCheck className="h-4 w-4" />
