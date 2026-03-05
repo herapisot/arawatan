@@ -1,6 +1,7 @@
 import { createBrowserRouter } from "react-router";
 import { Layout } from "./components/Layout";
 import { ProtectedRoute } from "./components/ProtectedRoute";
+import { AdminRoute } from "./components/AdminRoute";
 import { LandingPage } from "./pages/LandingPage";
 import { BrowseItemPage } from "./pages/BrowseItemPage";
 import { ForumPage } from "./pages/ForumPage";
@@ -45,7 +46,7 @@ export const router = createBrowserRouter([
   },
   {
     path: "/admin",
-    Component: AdminLayout,
+    element: <AdminRoute><AdminLayout /></AdminRoute>,
     children: [
       { index: true, Component: AdminDashboard },
       { path: "verifications", Component: UserVerificationPanel },

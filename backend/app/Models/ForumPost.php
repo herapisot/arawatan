@@ -50,4 +50,9 @@ class ForumPost extends Model
         if (!$user) return false;
         return $this->likes()->where('user_id', $user->id)->exists();
     }
+
+    public function comments()
+    {
+        return $this->hasMany(ForumComment::class, 'gallery_post_id');
+    }
 }

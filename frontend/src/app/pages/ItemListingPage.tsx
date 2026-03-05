@@ -78,7 +78,15 @@ export function ItemListingPage() {
       sileo.success({ title: "Item Listed!", description: "Redirecting..." });
       setTimeout(() => navigate("/browseitem"), 2000);
     } catch (err: any) {
-      if (err.response?.data?.errors) {
+      if (err.response?.data?.moderation) {
+        const mod = err.response.data.moderation;
+        const reasons = mod.reasons?.join('; ') || 'Prohibited content detected';
+        sileo.error({ 
+          title: "Content Rejected by AI Safety", 
+          description: reasons,
+        });
+        setError(`AI Safety Screening Failed: ${reasons}`);
+      } else if (err.response?.data?.errors) {
         const errors = Object.values(err.response.data.errors).flat().join(', ');
         sileo.error({ title: "Listing Error", description: errors });
       } else {

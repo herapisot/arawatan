@@ -174,29 +174,50 @@ class VerificationController extends Controller
                 'is_verified'         => true,
                 'verification_status' => 'approved',
             ]);
-        } else {
-            $user->update([
-                'verification_status' => 'rejected',
-            ]);
-        }
 
-        return response()->json([
-            'message'       => $isApproved
-                ? 'Your MinSU ID has been verified successfully!'
-                : 'Could not verify your MinSU ID. Please try again with a clearer photo.',
-            'status'        => $verification->status,
-            'ai_confidence' => $confidenceScore,
-            'ocr_detected'  => $detectedId,
-            'reasons'       => $isApproved ? [] : $reasons,
-            'checks'        => [
-                'id_number_match'    => $idMatched,
-                'first_name_match'   => $nameResult['first_name_match'] ?? false,
-                'last_name_match'    => $nameResult['last_name_match'] ?? false,
-                'institution_found'  => $analysis['institution_found'] ?? false,
-                'logo_match'         => $analysis['logo_match'] ?? false,
-            ],
-            'verification'  => $verification,
-        ]);
+            return response()->json([
+                'message'       => 'Your MinSU ID has been verified successfully!',
+                'status'        => 'approved',
+                'ai_confidence' => $confidenceScore,
+                'ocr_detected'  => $detectedId,
+                'reasons'       => [],
+                'checks'        => [
+                    'id_number_match'    => $idMatched,
+                    'first_name_match'   => $nameResult['first_name_match'] ?? false,
+                    'last_name_match'    => $nameResult['last_name_match'] ?? false,
+                    'institution_found'  => $analysis['institution_found'] ?? false,
+                    'logo_match'         => $analysis['logo_match'] ?? false,
+                ],
+                'verification'  => $verification,
+            ]);
+        } else {
+            // ── REJECTED: clean up everything so nothing persists ──
+            // Delete the verification record
+            $verification->delete();
+
+            // Delete the uploaded ID image
+            Storage::disk('public')->delete($path);
+
+            // Revoke all tokens (de-authenticate)
+            $user->tokens()->delete();
+
+            // Delete the user account entirely
+            $user->delete();
+
+            return response()->json([
+                'message'       => 'Could not verify your MinSU ID. Please try again with a clearer photo.',
+                'status'        => 'rejected',
+                'ai_confidence' => $confidenceScore,
+                'reasons'       => $reasons,
+                'checks'        => [
+                    'id_number_match'    => $idMatched,
+                    'first_name_match'   => $nameResult['first_name_match'] ?? false,
+                    'last_name_match'    => $nameResult['last_name_match'] ?? false,
+                    'institution_found'  => $analysis['institution_found'] ?? false,
+                    'logo_match'         => $analysis['logo_match'] ?? false,
+                ],
+            ], 422);
+        }
     }
 
     /**
@@ -222,5 +243,92 @@ class VerificationController extends Controller
             'verification' => $verification,
             'user_verified' => $request->user()->is_verified,
         ]);
+    }
+
+    /**
+     * Pre-check ID image against form data BEFORE registration.
+     * This is a public endpoint (no auth required).
+     *
+     * Validates: email domain, student ID format, OCR name match,
+     * OCR student ID match, and institution presence.
+     */
+    public function preCheck(Request $request)
+    {
+        $request->validate([
+            'id_image'   => 'required|image|max:5120',
+            'first_name' => 'required|string|max:255',
+            'last_name'  => 'required|string|max:255',
+            'student_id' => 'required|string|max:50',
+            'email'      => 'required|email|max:255',
+        ]);
+
+        $reasons = [];
+
+        // 1. Email domain check
+        $email = strtolower($request->email);
+        if (!str_ends_with($email, '@minsu.edu.ph')) {
+            $reasons[] = 'Email is not from the MinSU domain (@minsu.edu.ph).';
+        }
+
+        // 2. Student/Employee ID format check
+        $studentId = $request->student_id;
+        if (!preg_match('/^(?:MMC)?\d{4}-\d{4,6}$/i', $studentId)) {
+            $reasons[] = 'Student/Employee ID format is invalid.';
+        }
+
+        // 3. Store image temporarily for OCR
+        $path = $request->file('id_image')->store('temp-verifications', 'public');
+        $absolutePath = Storage::disk('public')->path($path);
+
+        // 4. Run OCR analysis
+        $analysis   = $this->ocrService->analyzeId($absolutePath);
+        $detectedId = $analysis['detected_id'];
+        $ocrText    = $analysis['raw_text'];
+
+        // 5. Student ID match from OCR
+        $idMatched = false;
+        if ($detectedId) {
+            if (strcasecmp($detectedId, $studentId) === 0) {
+                $idMatched = true;
+            }
+        } else {
+            $reasons[] = 'Could not read a student number from the ID image. Upload a clear, well-lit photo.';
+        }
+
+        if ($detectedId && !$idMatched) {
+            $reasons[] = 'Student ID on the card does not match your input.';
+        }
+
+        // 6. Name match from OCR
+        $nameResult = $this->ocrService->matchName($ocrText, $request->first_name, $request->last_name);
+        if (!$nameResult['first_name_match']) {
+            $reasons[] = "First name \"{$request->first_name}\" was not found on the ID.";
+        }
+        if (!$nameResult['last_name_match']) {
+            $reasons[] = "Last name \"{$request->last_name}\" was not found on the ID.";
+        }
+
+        // 7. Institution check
+        if (!$analysis['institution_found']) {
+            $reasons[] = 'The ID does not appear to be from Mindoro State University.';
+        }
+
+        // Clean up temp file
+        Storage::disk('public')->delete($path);
+
+        $passed = count($reasons) === 0;
+
+        return response()->json([
+            'passed'  => $passed,
+            'reasons' => $reasons,
+            'checks'  => [
+                'email_domain'      => str_ends_with($email, '@minsu.edu.ph'),
+                'id_format_valid'   => (bool) preg_match('/^(?:MMC)?\d{4}-\d{4,6}$/i', $studentId),
+                'id_number_match'   => $idMatched,
+                'first_name_match'  => $nameResult['first_name_match'] ?? false,
+                'last_name_match'   => $nameResult['last_name_match'] ?? false,
+                'institution_found' => $analysis['institution_found'] ?? false,
+            ],
+        ], $passed ? 200 : 422);
     }
 }

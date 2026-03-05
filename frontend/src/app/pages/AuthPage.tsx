@@ -20,8 +20,9 @@ import {
   AlertTriangle,
   Scan,
 } from "lucide-react";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "../components/ui/dialog";
 import { useAuth } from "../contexts/AuthContext";
-import { verificationApi } from "../services/api";
+import { verificationApi, otpApi } from "../services/api";
 import { sileo } from "sileo";
 import minsuBuilding from "../../assets/minsu-building.jpg";
 
@@ -53,6 +54,17 @@ export function AuthPage() {
   const [rejectionReason, setRejectionReason] = useState("");
   const [idFile, setIdFile] = useState<File | null>(null);
   const [dragActive, setDragActive] = useState(false);
+
+  // OTP state
+  const [showOtpModal, setShowOtpModal] = useState(false);
+  const [otpValues, setOtpValues] = useState<string[]>(["" , "", "", "", "", ""]);
+  const [otpSending, setOtpSending] = useState(false);
+  const [otpVerifying, setOtpVerifying] = useState(false);
+  const [otpError, setOtpError] = useState("");
+  const [otpSent, setOtpSent] = useState(false);
+  const [otpCountdown, setOtpCountdown] = useState(0);
+  const [otpExpiryCountdown, setOtpExpiryCountdown] = useState(0);
+
   const [formData, setFormData] = useState({
     firstName: "",
     lastName: "",
@@ -64,6 +76,20 @@ export function AuthPage() {
     confirmPassword: "",
     agreeTerms: false,
   });
+
+  // Resend cooldown timer
+  useEffect(() => {
+    if (otpCountdown <= 0) return;
+    const timer = setInterval(() => setOtpCountdown((c) => c - 1), 1000);
+    return () => clearInterval(timer);
+  }, [otpCountdown]);
+
+  // OTP expiry countdown (5 minutes = 300 seconds)
+  useEffect(() => {
+    if (otpExpiryCountdown <= 0) return;
+    const timer = setInterval(() => setOtpExpiryCountdown((c) => c - 1), 1000);
+    return () => clearInterval(timer);
+  }, [otpExpiryCountdown]);
 
   // Only redirect on initial mount if already authenticated and verified
   // (not during registration flow)
@@ -92,6 +118,164 @@ export function AuthPage() {
   };
 
   // ==================== REGISTER ====================
+
+  // Send OTP to email
+  const sendOtp = async () => {
+    if (!formData.email) {
+      sileo.error({ title: "Error", description: "Please enter your email first." });
+      return;
+    }
+    setOtpSending(true);
+    setOtpError("");
+    try {
+      const otpRes = await otpApi.send(formData.email);
+      setOtpSent(true);
+      setOtpCountdown(60); // 60 second cooldown for resend
+      setOtpExpiryCountdown(300); // 5 minute expiry
+      sileo.success({ title: "OTP Sent", description: `Verification code sent to ${formData.email}` });
+    } catch (err: unknown) {
+      const error = err as { response?: { data?: { message?: string } } };
+      const msg = error.response?.data?.message || "Failed to send OTP.";
+      setOtpError(msg);
+      sileo.error({ title: "Error", description: msg });
+    } finally {
+      setOtpSending(false);
+    }
+  };
+
+  // Handle OTP input (individual digit boxes)
+  const handleOtpChange = (index: number, value: string) => {
+    if (value.length > 1) value = value.slice(-1);
+    if (value && !/^\d$/.test(value)) return;
+
+    const newValues = [...otpValues];
+    newValues[index] = value;
+    setOtpValues(newValues);
+    setOtpError("");
+
+    // Auto-focus next input
+    if (value && index < 5) {
+      const next = document.getElementById(`otp-${index + 1}`);
+      next?.focus();
+    }
+  };
+
+  const handleOtpKeyDown = (index: number, e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === "Backspace" && !otpValues[index] && index > 0) {
+      const prev = document.getElementById(`otp-${index - 1}`);
+      prev?.focus();
+    }
+  };
+
+  const handleOtpPaste = (e: React.ClipboardEvent) => {
+    e.preventDefault();
+    const pasted = e.clipboardData.getData("text").replace(/\D/g, "").slice(0, 6);
+    if (!pasted) return;
+    const newValues = [...otpValues];
+    for (let i = 0; i < 6; i++) {
+      newValues[i] = pasted[i] || "";
+    }
+    setOtpValues(newValues);
+    // Focus last filled or last input
+    const focusIdx = Math.min(pasted.length, 5);
+    document.getElementById(`otp-${focusIdx}`)?.focus();
+  };
+
+  // Verify OTP then proceed with registration
+  const verifyOtpAndRegister = async () => {
+    const otp = otpValues.join("");
+    if (otp.length !== 6) {
+      setOtpError("Please enter all 6 digits.");
+      return;
+    }
+
+    setOtpVerifying(true);
+    setOtpError("");
+    try {
+      await otpApi.verify(formData.email, otp);
+      setShowOtpModal(false);
+      // OTP verified — now proceed with actual registration
+      await proceedWithRegistration();
+    } catch (err: unknown) {
+      const error = err as { response?: { data?: { message?: string } } };
+      const msg = error.response?.data?.message || "Invalid OTP.";
+      setOtpError(msg);
+    } finally {
+      setOtpVerifying(false);
+    }
+  };
+
+  // Open OTP modal when form is submitted (after pre-check passes)
+  const handleRegisterFormSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setRegError("");
+
+    // Validate email domain
+    if (!formData.email.toLowerCase().endsWith("@minsu.edu.ph")) {
+      sileo.error({ title: "Error", description: "Please use your MinSU email address (@minsu.edu.ph)." });
+      return;
+    }
+    if (formData.password !== formData.confirmPassword) {
+      sileo.error({ title: "Error", description: "Passwords do not match." });
+      return;
+    }
+    if (!idFile) {
+      sileo.error({ title: "Error", description: "Please upload your MinSU ID." });
+      return;
+    }
+
+    // Step 1: Pre-check ID image against form data before OTP
+    setRegLoading(true);
+    try {
+      const preCheckData = new FormData();
+      preCheckData.append("id_image", idFile);
+      preCheckData.append("first_name", formData.firstName);
+      preCheckData.append("last_name", formData.lastName);
+      preCheckData.append("student_id", formData.studentId);
+      preCheckData.append("email", formData.email);
+
+      await verificationApi.preCheck(preCheckData);
+    } catch (err: unknown) {
+      const error = err as { response?: { data?: { reasons?: string[]; message?: string } } };
+      const reasons: string[] = error.response?.data?.reasons || [];
+      if (reasons.length > 0) {
+        const reason = reasons.map((r) => `• ${r}`).join("\n");
+        setRejectionReason(reason);
+        setRegisterStep("rejected");
+      } else {
+        const msg = error.response?.data?.message || "ID verification failed. Please try again.";
+        sileo.error({ title: "Verification Failed", description: msg });
+      }
+      setRegLoading(false);
+      return;
+    } finally {
+      setRegLoading(false);
+    }
+
+    // Step 2: Pre-check passed — open OTP modal
+    setOtpValues(["", "", "", "", "", ""]);
+    setOtpError("");
+    setOtpSent(false);
+    setOtpExpiryCountdown(0);
+    setShowOtpModal(true);
+
+    // Auto-send OTP
+    setOtpSending(true);
+    try {
+      const otpRes = await otpApi.send(formData.email);
+      setOtpSent(true);
+      setOtpCountdown(60);
+      setOtpExpiryCountdown(300);
+      sileo.success({ title: "OTP Sent", description: `Verification code sent to ${formData.email}` });
+    } catch (err: unknown) {
+      const error = err as { response?: { data?: { message?: string } } };
+      const msg = error.response?.data?.message || "Failed to send OTP.";
+      setOtpError(msg);
+    } finally {
+      setOtpSending(false);
+    }
+  };
+
   const handleDrag = (e: React.DragEvent) => {
     e.preventDefault();
     e.stopPropagation();
@@ -106,19 +290,8 @@ export function AuthPage() {
     if (e.dataTransfer.files?.[0]) setIdFile(e.dataTransfer.files[0]);
   };
 
-  const handleRegister = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const proceedWithRegistration = async () => {
     setRegError("");
-
-    if (formData.password !== formData.confirmPassword) {
-      sileo.error({ title: "Error", description: "Passwords do not match." });
-      return;
-    }
-    if (!idFile) {
-      sileo.error({ title: "Error", description: "Please upload your MinSU ID." });
-      return;
-    }
-
     setRegLoading(true);
     setRegisterStep("verifying");
     setProgress(10);
@@ -139,7 +312,7 @@ export function AuthPage() {
 
       // Step 2: Upload ID for AI verification (SheerID-like)
       const fd = new FormData();
-      fd.append("id_image", idFile);
+      fd.append("id_image", idFile!);
       setProgress(60);
 
       const res = await verificationApi.upload(fd);
@@ -166,20 +339,37 @@ export function AuthPage() {
           : (res.data.message || "Could not verify your MinSU ID.");
         setRejectionReason(reason);
         sileo.error({ title: "Verification Failed", description: "Could not verify your MinSU ID." });
+        // Log out to clear local auth state — backend already deleted the account
+        await logout();
         setRegisterStep("rejected");
       }
     } catch (err: unknown) {
-      const error = err as { response?: { data?: { message?: string; errors?: Record<string, string[]> } } };
-      if (error.response?.data?.errors) {
+      const error = err as { response?: { data?: { message?: string; errors?: Record<string, string[]>; status?: string; reasons?: string[] } } };
+
+      // If the error came from the verification upload (rejected via 422), show rejection
+      if (error.response?.data?.status === 'rejected') {
+        const reasons: string[] = error.response.data.reasons || [];
+        const reason = reasons.length > 0
+          ? reasons.map(r => `• ${r}`).join('\n')
+          : (error.response.data.message || "Could not verify your MinSU ID.");
+        setRejectionReason(reason);
+        sileo.error({ title: "Verification Failed", description: "Could not verify your MinSU ID." });
+        await logout();
+        setRegisterStep("rejected");
+      } else if (error.response?.data?.errors) {
         const firstError = Object.values(error.response.data.errors)[0];
         const msg = Array.isArray(firstError) ? firstError[0] : String(firstError);
         sileo.error({ title: "Registration Failed", description: msg });
+        await logout();
+        setRegisterStep("form");
+        setProgress(0);
       } else {
         const msg = error.response?.data?.message || "Registration failed. Please try again.";
         sileo.error({ title: "Registration Failed", description: msg });
+        await logout();
+        setRegisterStep("form");
+        setProgress(0);
       }
-      setRegisterStep("form");
-      setProgress(0);
     } finally {
       setRegLoading(false);
     }
@@ -381,7 +571,7 @@ export function AuthPage() {
 
               {/* ===== REGISTER TAB ===== */}
               {activeTab === "register" && (
-                <form onSubmit={handleRegister} className="space-y-4">
+                <form onSubmit={handleRegisterFormSubmit} className="space-y-4">
                   <div className="text-center mb-2">
                     <h1 className="text-lg font-bold">Create Account</h1>
                   </div>
@@ -483,7 +673,9 @@ export function AuthPage() {
                   </div>
 
                   <Button type="submit" className="w-full bg-primary hover:bg-primary/90 text-primary-foreground" size="lg" disabled={!formData.agreeTerms || regLoading || !idFile}>
-                    {regLoading ? "Creating & Verifying..." : (
+                    {regLoading ? (
+                      <><Scan className="h-4 w-4 mr-2 animate-spin" /> Verifying your ID...</>
+                    ) : (
                       <><ArrowRight className="h-4 w-4 mr-2" /> Create Account & Verify ID</>
                     )}
                   </Button>
@@ -493,6 +685,101 @@ export function AuthPage() {
           </Card>
         )}
       </div>
+
+      {/* ===== OTP VERIFICATION MODAL ===== */}
+      <Dialog open={showOtpModal} onOpenChange={() => {}}>
+        <DialogContent
+          className="sm:max-w-md"
+          hideClose
+          onInteractOutside={(e) => e.preventDefault()}
+          onEscapeKeyDown={(e) => e.preventDefault()}
+        >
+          <DialogHeader>
+            <DialogTitle className="text-center">Verify Your Email</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-5 py-2">
+            {/* Secure badge */}
+            <div className="text-center">
+              <div className="inline-flex items-center justify-center w-14 h-14 bg-primary/10 text-primary rounded-full mb-3">
+                <ShieldCheck className="h-7 w-7" />
+              </div>
+              <p className="text-sm text-muted-foreground">
+                We sent a 6-digit verification code to
+              </p>
+              <p className="text-sm font-semibold mt-1">{formData.email}</p>
+            </div>
+
+            {/* Expiry countdown */}
+            {otpSent && otpExpiryCountdown > 0 && (
+              <div className="flex items-center justify-center gap-2 text-xs text-muted-foreground">
+                <Clock className="h-3.5 w-3.5" />
+                <span>Code expires in {Math.floor(otpExpiryCountdown / 60)}:{String(otpExpiryCountdown % 60).padStart(2, "0")}</span>
+              </div>
+            )}
+
+            {otpSent && otpExpiryCountdown === 0 && otpExpiryCountdown !== 0 && (
+              <Alert variant="destructive">
+                <AlertDescription className="text-xs">OTP expired. Please request a new one.</AlertDescription>
+              </Alert>
+            )}
+
+            {/* OTP Input boxes */}
+            <div className="flex justify-center gap-2" onPaste={handleOtpPaste}>
+              {otpValues.map((val, i) => (
+                <input
+                  key={i}
+                  id={`otp-${i}`}
+                  type="text"
+                  inputMode="numeric"
+                  maxLength={1}
+                  value={val}
+                  onChange={(e) => handleOtpChange(i, e.target.value)}
+                  onKeyDown={(e) => handleOtpKeyDown(i, e)}
+                  className="w-11 h-12 text-center text-lg font-bold border-2 rounded-lg focus:border-primary focus:ring-2 focus:ring-primary/20 outline-none transition-all bg-background"
+                  disabled={otpVerifying}
+                  autoFocus={i === 0}
+                />
+              ))}
+            </div>
+
+            {/* Error message */}
+            {otpError && (
+              <Alert variant="destructive">
+                <AlertDescription className="text-xs">{otpError}</AlertDescription>
+              </Alert>
+            )}
+
+            {/* Verify button */}
+            <Button
+              className="w-full bg-primary hover:bg-primary/90 text-primary-foreground"
+              size="lg"
+              onClick={verifyOtpAndRegister}
+              disabled={otpVerifying || otpValues.join("").length !== 6}
+            >
+              {otpVerifying ? "Verifying..." : (
+                <><ShieldCheck className="h-4 w-4 mr-2" /> Verify & Continue</>
+              )}
+            </Button>
+
+            {/* Resend */}
+            <div className="text-center">
+              <p className="text-xs text-muted-foreground mb-1">Didn't receive the code?</p>
+              <button
+                type="button"
+                onClick={sendOtp}
+                disabled={otpSending || otpCountdown > 0}
+                className="text-xs font-medium text-primary hover:underline disabled:text-muted-foreground disabled:no-underline"
+              >
+                {otpSending
+                  ? "Sending..."
+                  : otpCountdown > 0
+                  ? `Resend in ${otpCountdown}s`
+                  : "Resend Code"}
+              </button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

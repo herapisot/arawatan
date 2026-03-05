@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
 use App\Models\ForumPost;
+use App\Services\ContentModerationService;
 use App\Traits\EncryptsRouteIds;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
@@ -99,8 +100,35 @@ class ForumController extends Controller
             'visibility' => 'nullable|in:public,private',
         ]);
 
-        // Auto-crop image to square
+        // AI Content Moderation — screen caption text
+        $moderationService = new ContentModerationService();
+        $textFields = [];
+        if (!empty($request->caption)) {
+            $textFields['caption'] = $request->caption;
+        }
+
+        // Screen the uploaded image for prohibited text
+        $imagePaths = [];
         $image = $request->file('image');
+        $tempImagePath = $image->getRealPath();
+        if ($tempImagePath && file_exists($tempImagePath)) {
+            $imagePaths[] = $tempImagePath;
+        }
+
+        $screening = $moderationService->screenContent($textFields, $imagePaths);
+
+        if (!$screening['approved']) {
+            return response()->json([
+                'message' => 'Your post was rejected by our AI safety screening.',
+                'moderation' => [
+                    'reasons' => $screening['reasons'],
+                    'severity' => $screening['overall_severity'],
+                    'categories' => $screening['flagged_categories'],
+                ],
+            ], 422);
+        }
+
+        // Auto-crop image to square
         $croppedPath = $this->cropToSquare($image);
 
         $post = ForumPost::create([
@@ -109,7 +137,7 @@ class ForumController extends Controller
             'image_path' => $croppedPath,
             'caption' => $request->caption,
             'visibility' => $request->get('visibility', 'public'),
-            'status' => 'pending',
+            'status' => 'approved',
         ]);
 
         return response()->json($post->load('user'), 201);

@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Api;
 use App\Http\Controllers\Controller;
 use App\Models\Item;
 use App\Models\ItemImage;
+use App\Services\ContentModerationService;
 use App\Traits\EncryptsRouteIds;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
@@ -134,6 +135,7 @@ class ItemController extends Controller
         ]);
 
         // Handle image uploads
+        $imagePaths = [];
         if ($request->hasFile('images')) {
             foreach ($request->file('images') as $index => $image) {
                 $path = $image->store('items', 'public');
@@ -143,14 +145,44 @@ class ItemController extends Controller
                     'is_primary' => $index === 0,
                     'sort_order' => $index,
                 ]);
+                $imagePaths[] = storage_path('app/public/' . $path);
             }
         }
 
-        // Auto-approve for now (simulate AI screening pass)
-        $item->update([
-            'status' => 'active',
-            'is_verified' => true,
-        ]);
+        // AI Content Moderation Screening
+        $moderationService = new ContentModerationService();
+        $screening = $moderationService->screenContent(
+            [
+                'title' => $validated['title'],
+                'description' => $validated['description'],
+                'custom_category' => $validated['custom_category'] ?? '',
+            ],
+            $imagePaths
+        );
+
+        if ($screening['approved']) {
+            // Content passed AI screening — auto-approve
+            $item->update([
+                'status' => 'active',
+                'is_verified' => true,
+            ]);
+        } else {
+            // Content flagged — reject and clean up
+            foreach ($item->images as $image) {
+                Storage::disk('public')->delete($image->image_path);
+            }
+            $item->images()->delete();
+            $item->delete();
+
+            return response()->json([
+                'message' => 'Your listing was rejected by our AI safety screening.',
+                'moderation' => [
+                    'reasons' => $screening['reasons'],
+                    'severity' => $screening['overall_severity'],
+                    'categories' => $screening['flagged_categories'],
+                ],
+            ], 422);
+        }
 
         return response()->json(
             $item->load('images'),

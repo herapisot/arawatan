@@ -7,6 +7,7 @@ use App\Http\Controllers\Api\TransactionController;
 use App\Http\Controllers\Api\VerificationController;
 use App\Http\Controllers\Api\ChatController;
 use App\Http\Controllers\Api\ForumController;
+use App\Http\Controllers\Api\ForumCommentController;
 use App\Http\Controllers\Api\ProfileController;
 use App\Http\Controllers\Api\LeaderboardController;
 use App\Http\Controllers\Api\ReportController;
@@ -14,6 +15,7 @@ use App\Http\Controllers\Api\NotificationController;
 use App\Http\Controllers\Api\Admin\AdminDashboardController;
 use App\Http\Controllers\Api\Admin\AdminVerificationController;
 use App\Http\Controllers\Api\Admin\AdminModerationController;
+use App\Http\Controllers\Api\OtpController;
 use App\Http\Controllers\Api\Admin\AdminForumController;
 
 /*
@@ -25,6 +27,13 @@ use App\Http\Controllers\Api\Admin\AdminForumController;
 // Public routes
 Route::post('/register', [AuthController::class, 'register']);
 Route::post('/login', [AuthController::class, 'login']);
+
+// OTP routes (public, rate-limited)
+Route::post('/otp/send', [OtpController::class, 'send']);
+Route::post('/otp/verify', [OtpController::class, 'verify']);
+
+// Pre-registration ID verification (public)
+Route::post('/verification/pre-check', [VerificationController::class, 'preCheck']);
 
 // Public item browsing
 Route::get('/items', [ItemController::class, 'index']);
@@ -81,6 +90,11 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/forum/mine', [ForumController::class, 'myPosts']);
     Route::post('/forum', [ForumController::class, 'store']);
     Route::post('/forum/{encryptedId}/like', [ForumController::class, 'toggleLike']);
+
+    // Forum comments (authenticated)
+    Route::get('/forum/{encryptedPostId}/comments', [ForumCommentController::class, 'index']);
+    Route::post('/forum/{encryptedPostId}/comments', [ForumCommentController::class, 'store']);
+    Route::delete('/forum/comments/{encryptedCommentId}', [ForumCommentController::class, 'destroy']);
 
     // Reports
     Route::post('/items/{encryptedId}/report', [ReportController::class, 'reportItem']);

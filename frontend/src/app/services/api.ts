@@ -129,7 +129,18 @@ export const verificationApi = {
       headers: { 'Content-Type': 'multipart/form-data' },
     }),
 
+  preCheck: (formData: FormData) =>
+    api.post('/verification/pre-check', formData, {
+      headers: { 'Content-Type': 'multipart/form-data' },
+    }),
+
   status: () => api.get('/verification/status'),
+};
+
+// ==================== OTP ====================
+export const otpApi = {
+  send: (email: string) => api.post('/otp/send', { email }),
+  verify: (email: string, otp: string) => api.post('/otp/verify', { email, otp }),
 };
 
 // ==================== Chat ====================
@@ -169,6 +180,16 @@ export const forumApi = {
 
   toggleLike: (encryptedPostId: string) =>
     api.post(`/forum/${encryptedPostId}/like`),
+
+  // Comments
+  getComments: (encryptedPostId: string, params?: { page?: number }) =>
+    api.get(`/forum/${encryptedPostId}/comments`, { params }),
+
+  addComment: (encryptedPostId: string, body: string) =>
+    api.post(`/forum/${encryptedPostId}/comments`, { body }),
+
+  deleteComment: (encryptedCommentId: string) =>
+    api.delete(`/forum/comments/${encryptedCommentId}`),
 };
 
 // ==================== Leaderboard ====================

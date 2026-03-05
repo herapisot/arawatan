@@ -7,6 +7,8 @@ import { Avatar, AvatarFallback } from "../components/ui/avatar";
 import { ImageWithFallback } from "../components/figma/ImageWithFallback";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "../components/ui/dialog";
 import { Textarea } from "../components/ui/textarea";
+import { Input } from "../components/ui/input";
+import { Alert, AlertDescription } from "../components/ui/alert";
 import { 
   Eye, 
   EyeOff,
@@ -16,7 +18,10 @@ import {
   Upload,
   Clock,
   CheckCircle2,
-  XCircle
+  XCircle,
+  MessageCircle,
+  Send,
+  Trash2
 } from "lucide-react";
 import { forumApi } from "../services/api";
 import { useAuth } from "../contexts/AuthContext";
@@ -34,6 +39,14 @@ export function ForumPage() {
   const [caption, setCaption] = useState("");
   const [uploading, setUploading] = useState(false);
   const STORAGE_URL = import.meta.env.VITE_STORAGE_URL || 'http://localhost:8000/storage';
+
+  // Comments state
+  const [commentDialogOpen, setCommentDialogOpen] = useState(false);
+  const [activePost, setActivePost] = useState<any>(null);
+  const [comments, setComments] = useState<any[]>([]);
+  const [loadingComments, setLoadingComments] = useState(false);
+  const [newComment, setNewComment] = useState("");
+  const [submittingComment, setSubmittingComment] = useState(false);
 
   const loadForum = async () => {
     setLoading(true);
@@ -115,10 +128,20 @@ export function ForumPage() {
       setSelectedFile(null);
       setPreviewUrl(null);
       setCaption("");
+      sileo.success({ title: "Posted!", description: "Your post is now live." });
     } catch (err: any) {
       console.error('Failed to upload:', err);
-      const errorMsg = err.response?.data?.message || err.message || 'Unknown error';
-      sileo.error({ title: "Upload Failed", description: errorMsg });
+      const data = err.response?.data;
+      if (data?.moderation) {
+        const reasons = data.moderation.reasons?.join('; ') || 'Prohibited content detected';
+        sileo.error({ 
+          title: "Content Rejected", 
+          description: `AI Safety: ${reasons}`,
+        });
+      } else {
+        const errorMsg = data?.message || err.message || 'Unknown error';
+        sileo.error({ title: "Upload Failed", description: errorMsg });
+      }
     } finally {
       setUploading(false);
     }
@@ -131,6 +154,53 @@ export function ForumPage() {
       if (previewUrl) URL.revokeObjectURL(previewUrl);
       setPreviewUrl(null);
       setCaption("");
+    }
+  };
+
+  const openComments = async (post: any) => {
+    setActivePost(post);
+    setCommentDialogOpen(true);
+    setLoadingComments(true);
+    try {
+      const res = await forumApi.getComments(post.encrypted_id);
+      setComments(res.data.data || []);
+    } catch {
+      setComments([]);
+    } finally {
+      setLoadingComments(false);
+    }
+  };
+
+  const handleAddComment = async () => {
+    if (!newComment.trim() || !activePost) return;
+    setSubmittingComment(true);
+    try {
+      const res = await forumApi.addComment(activePost.encrypted_id, newComment.trim());
+      setComments(prev => [res.data, ...prev]);
+      setNewComment("");
+      sileo.success({ title: "Comment Added" });
+    } catch (err: any) {
+      const data = err.response?.data;
+      if (data?.moderation) {
+        sileo.error({ 
+          title: "Comment Rejected", 
+          description: `AI Safety: ${data.moderation.reason || 'Prohibited content detected'}`,
+        });
+      } else {
+        sileo.error({ title: "Failed", description: data?.message || 'Could not add comment' });
+      }
+    } finally {
+      setSubmittingComment(false);
+    }
+  };
+
+  const handleDeleteComment = async (commentId: string) => {
+    try {
+      await forumApi.deleteComment(commentId);
+      setComments(prev => prev.filter(c => c.encrypted_id !== commentId));
+      sileo.success({ title: "Comment Deleted" });
+    } catch {
+      sileo.error({ title: "Failed", description: "Could not delete comment" });
     }
   };
 
@@ -249,24 +319,33 @@ export function ForumPage() {
                 )}
                 
                 <div className="flex items-center justify-between text-sm text-muted-foreground">
-                  <button
-                    className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full transition-all duration-200 ${
-                      item.is_liked 
-                        ? 'bg-red-50 text-red-500 hover:bg-red-100' 
-                        : 'hover:bg-muted hover:text-foreground'
-                    }`}
-                    onClick={() => isAuthenticated ? handleLike(item.encrypted_id) : navigate('/auth')}
-                  >
-                    <Heart 
-                      className="h-4 w-4 transition-all duration-200" 
-                      style={{ 
-                        fill: item.is_liked ? '#ef4444' : 'none', 
-                        color: item.is_liked ? '#ef4444' : 'currentColor',
-                        transform: item.is_liked ? 'scale(1.15)' : 'scale(1)'
-                      }} 
-                    />
-                    <span className="font-medium">{item.likes_count || 0}</span>
-                  </button>
+                  <div className="flex items-center gap-2">
+                    <button
+                      className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full transition-all duration-200 ${
+                        item.is_liked 
+                          ? 'bg-red-50 text-red-500 hover:bg-red-100' 
+                          : 'hover:bg-muted hover:text-foreground'
+                      }`}
+                      onClick={() => isAuthenticated ? handleLike(item.encrypted_id) : navigate('/auth')}
+                    >
+                      <Heart 
+                        className="h-4 w-4 transition-all duration-200" 
+                        style={{ 
+                          fill: item.is_liked ? '#ef4444' : 'none', 
+                          color: item.is_liked ? '#ef4444' : 'currentColor',
+                          transform: item.is_liked ? 'scale(1.15)' : 'scale(1)'
+                        }} 
+                      />
+                      <span className="font-medium">{item.likes_count || 0}</span>
+                    </button>
+                    <button
+                      className="flex items-center gap-1.5 px-3 py-1.5 rounded-full hover:bg-muted hover:text-foreground transition-all duration-200"
+                      onClick={() => openComments(item)}
+                    >
+                      <MessageCircle className="h-4 w-4" />
+                      <span className="font-medium">Comments</span>
+                    </button>
+                  </div>
                   <span>{new Date(item.created_at).toLocaleDateString()}</span>
                 </div>
               </CardContent>
@@ -330,6 +409,13 @@ export function ForumPage() {
                 />
                 <p className="text-xs text-muted-foreground mt-1 text-right">{caption.length}/500</p>
               </div>
+              {/* AI Safety Notice */}
+              <Alert className="bg-primary/5 border-primary/20">
+                <ShieldCheck className="h-4 w-4 text-primary" />
+                <AlertDescription className="text-xs text-muted-foreground">
+                  Your post will be screened by AI for prohibited content (drugs, alcohol, weapons, etc.) before publishing.
+                </AlertDescription>
+              </Alert>
             </div>
             <DialogFooter className="gap-2 sm:gap-0">
               <Button variant="outline" onClick={() => handleDialogClose(false)} disabled={uploading}>
@@ -337,12 +423,109 @@ export function ForumPage() {
               </Button>
               <Button onClick={handleUploadSubmit} disabled={uploading}>
                 {uploading ? (
-                  <><Loader2 className="h-4 w-4 mr-2 animate-spin" /> Uploading...</>
+                  <><Loader2 className="h-4 w-4 mr-2 animate-spin" /> Screening &amp; Posting...</>
                 ) : (
                   <><Upload className="h-4 w-4 mr-2" />Post</>
                 )}
               </Button>
             </DialogFooter>
+          </DialogContent>
+        </Dialog>
+
+        {/* Comments Dialog */}
+        <Dialog open={commentDialogOpen} onOpenChange={setCommentDialogOpen}>
+          <DialogContent className="sm:max-w-lg max-h-[85vh] flex flex-col">
+            <DialogHeader>
+              <DialogTitle>Comments</DialogTitle>
+            </DialogHeader>
+            
+            {activePost && (
+              <div className="flex items-start gap-3 pb-3 border-b">
+                <Avatar className="h-8 w-8 flex-shrink-0">
+                  <AvatarFallback className="bg-primary text-primary-foreground text-xs">
+                    {`${activePost.user?.first_name?.[0] || ''}${activePost.user?.last_name?.[0] || ''}`}
+                  </AvatarFallback>
+                </Avatar>
+                <div className="flex-1 min-w-0">
+                  <span className="font-semibold text-sm">{activePost.user?.full_name}</span>
+                  <p className="text-sm text-muted-foreground mt-0.5">{activePost.caption}</p>
+                </div>
+              </div>
+            )}
+
+            {/* Comments list */}
+            <div className="flex-1 overflow-y-auto space-y-3 py-2 min-h-0">
+              {loadingComments ? (
+                <div className="flex justify-center py-8">
+                  <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
+                </div>
+              ) : comments.length === 0 ? (
+                <p className="text-center text-sm text-muted-foreground py-8">
+                  No comments yet. Be the first to comment!
+                </p>
+              ) : (
+                comments.map((comment) => (
+                  <div key={comment.id} className="flex items-start gap-2.5 group">
+                    <Avatar className="h-7 w-7 flex-shrink-0">
+                      <AvatarFallback className="bg-muted text-xs">
+                        {`${comment.user?.first_name?.[0] || ''}${comment.user?.last_name?.[0] || ''}`}
+                      </AvatarFallback>
+                    </Avatar>
+                    <div className="flex-1 min-w-0">
+                      <div className="bg-muted rounded-xl px-3 py-2">
+                        <span className="font-medium text-sm">{comment.user?.full_name}</span>
+                        <p className="text-sm">{comment.body}</p>
+                      </div>
+                      <div className="flex items-center gap-2 mt-0.5 px-1">
+                        <span className="text-xs text-muted-foreground">
+                          {new Date(comment.created_at).toLocaleDateString()}
+                        </span>
+                        {user && (user.id === comment.user_id || user.role === 'admin') && (
+                          <button
+                            onClick={() => handleDeleteComment(comment.encrypted_id)}
+                            className="text-xs text-muted-foreground hover:text-destructive opacity-0 group-hover:opacity-100 transition-opacity"
+                          >
+                            <Trash2 className="h-3 w-3" />
+                          </button>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                ))
+              )}
+            </div>
+
+            {/* Add comment input */}
+            {isAuthenticated ? (
+              <div className="flex items-center gap-2 pt-3 border-t">
+                <Input
+                  placeholder="Write a comment..."
+                  value={newComment}
+                  onChange={(e) => setNewComment(e.target.value)}
+                  onKeyDown={(e) => e.key === 'Enter' && !e.shiftKey && handleAddComment()}
+                  maxLength={500}
+                  disabled={submittingComment}
+                  className="flex-1"
+                />
+                <Button 
+                  size="icon" 
+                  onClick={handleAddComment} 
+                  disabled={!newComment.trim() || submittingComment}
+                >
+                  {submittingComment ? (
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                  ) : (
+                    <Send className="h-4 w-4" />
+                  )}
+                </Button>
+              </div>
+            ) : (
+              <div className="pt-3 border-t text-center">
+                <Button variant="outline" size="sm" onClick={() => navigate('/auth')}>
+                  Log in to comment
+                </Button>
+              </div>
+            )}
           </DialogContent>
         </Dialog>
       </div>

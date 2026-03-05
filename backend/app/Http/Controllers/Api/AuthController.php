@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Api;
 use App\Http\Controllers\Controller;
 use App\Models\User;
 use App\Models\Verification;
+use App\Models\EmailOtp;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Validation\ValidationException;
@@ -22,6 +23,27 @@ class AuthController extends Controller
      */
     public function register(Request $request)
     {
+        // ── Require verified OTP before registration ──
+        $email = strtolower($request->email);
+        $otpRecord = EmailOtp::where('email', $email)
+            ->where('verified', true)
+            ->latest()
+            ->first();
+
+        if (!$otpRecord) {
+            return response()->json([
+                'message' => 'Email not verified. Please verify your email with OTP first.',
+            ], 422);
+        }
+
+        // Check if OTP was verified within the last 10 minutes (grace window)
+        if ($otpRecord->updated_at->diffInMinutes(now()) > 10) {
+            $otpRecord->delete();
+            return response()->json([
+                'message' => 'OTP verification expired. Please verify your email again.',
+            ], 422);
+        }
+
         // ── Clean up unverified accounts that would block uniqueness ──
         // Delete users who registered with the same email or student_id
         // but never completed verification (not verified & not approved).
@@ -62,6 +84,9 @@ class AuthController extends Controller
         ]);
 
         $token = $user->createToken('auth-token')->plainTextToken;
+
+        // Clean up used OTP records for this email
+        EmailOtp::where('email', $email)->delete();
 
         return response()->json([
             'user' => $user,
