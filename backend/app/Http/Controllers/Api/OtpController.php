@@ -9,6 +9,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Support\Facades\Log;
+use Throwable;
 
 class OtpController extends Controller
 {
@@ -48,7 +49,7 @@ class OtpController extends Controller
         $otp = str_pad((string) random_int(0, 999999), 6, '0', STR_PAD_LEFT);
 
         // Store otp with 5-minute expiry
-        EmailOtp::create([
+        $emailOtp = EmailOtp::create([
             'email' => $email,
             'otp' => $otp,
             'expires_at' => now()->addMinutes(5),
@@ -57,9 +58,20 @@ class OtpController extends Controller
         // Send the email
         try {
             Mail::to($email)->send(new OtpVerificationMail($otp));
-        } catch (\Exception $e) {
-            Log::error('OTP email failed: ' . $e->getMessage());
-            // Don't block registration — OTP is in DB, user can still verify
+        } catch (Throwable $e) {
+            // Remove the unusable OTP and reset the limiter because no email was delivered.
+            $emailOtp->delete();
+            RateLimiter::clear($rateLimitKey);
+
+            Log::error('OTP email failed.', [
+                'email' => $email,
+                'mailer' => config('mail.default'),
+                'error' => $e->getMessage(),
+            ]);
+
+            return response()->json([
+                'message' => 'Unable to send the verification code right now. Please try again later.',
+            ], 503);
         }
 
         $response = [

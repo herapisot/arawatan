@@ -77,6 +77,23 @@ export function AuthPage() {
     agreeTerms: false,
   });
 
+  const requiredRegisterFields: Array<{ key: keyof typeof formData; label: string }> = [
+    { key: "firstName", label: "First name" },
+    { key: "lastName", label: "Last name" },
+    { key: "email", label: "MinSU email" },
+    { key: "studentId", label: "Student/Employee ID" },
+    { key: "campus", label: "Campus" },
+    { key: "userType", label: "Type" },
+    { key: "password", label: "Password" },
+    { key: "confirmPassword", label: "Confirm password" },
+  ];
+
+  const missingRegisterFields = requiredRegisterFields
+    .filter(({ key }) => String(formData[key]).trim() === "")
+    .map(({ label }) => label);
+
+  const isRegisterFormComplete = missingRegisterFields.length === 0 && Boolean(idFile) && formData.agreeTerms;
+
   // Resend cooldown timer
   useEffect(() => {
     if (otpCountdown <= 0) return;
@@ -210,16 +227,33 @@ export function AuthPage() {
     e.preventDefault();
     setRegError("");
 
+    if (missingRegisterFields.length > 0) {
+      const message = `Please complete all required fields: ${missingRegisterFields.join(", ")}.`;
+      setRegError(message);
+      sileo.error({ title: "Missing Required Fields", description: message });
+      return;
+    }
+
+    if (!formData.agreeTerms) {
+      const message = "Please agree to the Terms of Service before continuing.";
+      setRegError(message);
+      sileo.error({ title: "Terms Required", description: message });
+      return;
+    }
+
     // Validate email domain
     if (!formData.email.toLowerCase().endsWith("@minsu.edu.ph")) {
+      setRegError("Please use your MinSU email address (@minsu.edu.ph).");
       sileo.error({ title: "Error", description: "Please use your MinSU email address (@minsu.edu.ph)." });
       return;
     }
     if (formData.password !== formData.confirmPassword) {
+      setRegError("Passwords do not match.");
       sileo.error({ title: "Error", description: "Passwords do not match." });
       return;
     }
     if (!idFile) {
+      setRegError("Please upload your MinSU ID.");
       sileo.error({ title: "Error", description: "Please upload your MinSU ID." });
       return;
     }
@@ -252,25 +286,28 @@ export function AuthPage() {
       setRegLoading(false);
     }
 
-    // Step 2: Pre-check passed — open OTP modal
+    // Step 2: Pre-check passed — request the OTP first, then open the modal.
     setOtpValues(["", "", "", "", "", ""]);
     setOtpError("");
     setOtpSent(false);
+    setOtpCountdown(0);
     setOtpExpiryCountdown(0);
-    setShowOtpModal(true);
 
-    // Auto-send OTP
     setOtpSending(true);
     try {
-      const otpRes = await otpApi.send(formData.email);
+      await otpApi.send(formData.email);
       setOtpSent(true);
       setOtpCountdown(60);
       setOtpExpiryCountdown(300);
+      setShowOtpModal(true);
       sileo.success({ title: "OTP Sent", description: `Verification code sent to ${formData.email}` });
     } catch (err: unknown) {
       const error = err as { response?: { data?: { message?: string } } };
       const msg = error.response?.data?.message || "Failed to send OTP.";
+      setRegError(msg);
       setOtpError(msg);
+      setShowOtpModal(false);
+      sileo.error({ title: "Unable to Send OTP", description: msg });
     } finally {
       setOtpSending(false);
     }
@@ -576,30 +613,36 @@ export function AuthPage() {
                     <h1 className="text-lg font-bold">Create Account</h1>
                   </div>
 
+                  {regError && (
+                    <Alert variant="destructive">
+                      <AlertDescription className="text-xs">{regError}</AlertDescription>
+                    </Alert>
+                  )}
+
                   <div className="grid grid-cols-2 gap-3">
                     <div>
                       <Label htmlFor="firstName" className="text-xs">First Name *</Label>
-                      <Input id="firstName" value={formData.firstName} onChange={(e) => setFormData({ ...formData, firstName: e.target.value })} placeholder="Juan" required className="mt-1" />
+                      <Input id="firstName" value={formData.firstName} onChange={(e) => { setRegError(""); setFormData({ ...formData, firstName: e.target.value }); }} placeholder="Juan" required className="mt-1" />
                     </div>
                     <div>
                       <Label htmlFor="lastName" className="text-xs">Last Name *</Label>
-                      <Input id="lastName" value={formData.lastName} onChange={(e) => setFormData({ ...formData, lastName: e.target.value })} placeholder="Dela Cruz" required className="mt-1" />
+                      <Input id="lastName" value={formData.lastName} onChange={(e) => { setRegError(""); setFormData({ ...formData, lastName: e.target.value }); }} placeholder="Dela Cruz" required className="mt-1" />
                     </div>
                   </div>
 
                   <div>
                     <Label htmlFor="regEmail" className="text-xs">MinSU Email *</Label>
-                    <Input id="regEmail" type="email" value={formData.email} onChange={(e) => setFormData({ ...formData, email: e.target.value })} placeholder="juan.delacruz@minsu.edu.ph" required className="mt-1" />
+                    <Input id="regEmail" type="email" value={formData.email} onChange={(e) => { setRegError(""); setFormData({ ...formData, email: e.target.value }); }} placeholder="juan.delacruz@minsu.edu.ph" required className="mt-1" />
                   </div>
 
                   <div className="grid grid-cols-2 gap-3">
                     <div>
                       <Label htmlFor="studentId" className="text-xs">Student/Employee ID *</Label>
-                      <Input id="studentId" value={formData.studentId} onChange={(e) => setFormData({ ...formData, studentId: e.target.value })} placeholder="2024-12345" required className="mt-1" />
+                      <Input id="studentId" value={formData.studentId} onChange={(e) => { setRegError(""); setFormData({ ...formData, studentId: e.target.value }); }} placeholder="2024-12345" required className="mt-1" />
                     </div>
                     <div>
                       <Label htmlFor="userType" className="text-xs">Type *</Label>
-                      <Select value={formData.userType} onValueChange={(v) => setFormData({ ...formData, userType: v })} required>
+                      <Select value={formData.userType} onValueChange={(v) => { setRegError(""); setFormData({ ...formData, userType: v }); }} required>
                         <SelectTrigger id="userType" className="mt-1"><SelectValue placeholder="Select" /></SelectTrigger>
                         <SelectContent>
                           <SelectItem value="student">Student</SelectItem>
@@ -612,7 +655,7 @@ export function AuthPage() {
 
                   <div>
                     <Label htmlFor="campus" className="text-xs">Campus *</Label>
-                    <Select value={formData.campus} onValueChange={(v) => setFormData({ ...formData, campus: v })} required>
+                    <Select value={formData.campus} onValueChange={(v) => { setRegError(""); setFormData({ ...formData, campus: v }); }} required>
                       <SelectTrigger id="campus" className="mt-1"><SelectValue placeholder="Select campus" /></SelectTrigger>
                       <SelectContent>
                         <SelectItem value="main">Main Campus - Victoria</SelectItem>
@@ -625,11 +668,11 @@ export function AuthPage() {
                   <div className="grid grid-cols-2 gap-3">
                     <div>
                       <Label htmlFor="password" className="text-xs">Password *</Label>
-                      <Input id="password" type="password" value={formData.password} onChange={(e) => setFormData({ ...formData, password: e.target.value })} placeholder="••••••••" required className="mt-1" />
+                      <Input id="password" type="password" value={formData.password} onChange={(e) => { setRegError(""); setFormData({ ...formData, password: e.target.value }); }} placeholder="••••••••" required className="mt-1" />
                     </div>
                     <div>
                       <Label htmlFor="confirmPassword" className="text-xs">Confirm *</Label>
-                      <Input id="confirmPassword" type="password" value={formData.confirmPassword} onChange={(e) => setFormData({ ...formData, confirmPassword: e.target.value })} placeholder="••••••••" required className="mt-1" />
+                      <Input id="confirmPassword" type="password" value={formData.confirmPassword} onChange={(e) => { setRegError(""); setFormData({ ...formData, confirmPassword: e.target.value }); }} placeholder="••••••••" required className="mt-1" />
                     </div>
                   </div>
 
@@ -661,18 +704,18 @@ export function AuthPage() {
                           <p className="text-[10px] text-muted-foreground">JPG, PNG — Max 1MB</p>
                         </>
                       )}
-                      <input type="file" id="id-upload" className="hidden" accept="image/*" onChange={(e) => { if (e.target.files?.[0]) setIdFile(e.target.files[0]); }} />
+                      <input type="file" id="id-upload" className="hidden" accept="image/*" onChange={(e) => { if (e.target.files?.[0]) { setRegError(""); setIdFile(e.target.files[0]); } }} />
                     </div>
                   </div>
 
                   <div className="flex items-start gap-2">
-                    <Checkbox id="terms" checked={formData.agreeTerms} onCheckedChange={(c) => setFormData({ ...formData, agreeTerms: c as boolean })} required />
+                    <Checkbox id="terms" checked={formData.agreeTerms} onCheckedChange={(c) => { setRegError(""); setFormData({ ...formData, agreeTerms: c as boolean }); }} required />
                     <label htmlFor="terms" className="text-[11px] leading-relaxed cursor-pointer text-gray-600">
                       I agree to the Terms of Service and confirm I am a MinSU community member.
                     </label>
                   </div>
 
-                  <Button type="submit" className="w-full bg-primary hover:bg-primary/90 text-primary-foreground" size="lg" disabled={!formData.agreeTerms || regLoading || !idFile}>
+                  <Button type="submit" className="w-full bg-primary hover:bg-primary/90 text-primary-foreground" size="lg" disabled={!isRegisterFormComplete || regLoading}>
                     {regLoading ? (
                       <><Scan className="h-4 w-4 mr-2 animate-spin" /> Verifying your ID...</>
                     ) : (
